@@ -173,10 +173,11 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     const amICreator = appt ? appt.createdBy === state.userProfile.email : true; 
     const isAdmin = state.userProfile.role === "admin";
     const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com");
+    const isAdminOrMaster = isAdmin || isSuperAdmin;
     const amIShared = appt && appt.sharedWith && appt.sharedWith.includes(state.userProfile.email);
     
     // CoreEditor: Admin ou Criador
-    const isCoreEditor = (isAdmin || amICreator);
+    const isCoreEditor = (isAdminOrMaster || amICreator);
     // CanSaveAny: Pode salvar se for Editor, Criador ou Compartilhado
     const canSaveAny = (isCoreEditor || amIShared);
     
@@ -258,7 +259,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     updateFormState(); // Init
 
     // --- RECORRÊNCIA (ADMIN) ---
-    if (isAdmin && !appt) {
+    if (isAdminOrMaster && !appt) {
         recurrenceSection.classList.remove("hidden");
         document.getElementById("recurrence-end-date").value = "";
         document.querySelectorAll("input[name='recurrence-day']").forEach(c => c.checked = false);
@@ -310,9 +311,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     // --- PREENCHIMENTO DE DADOS ESPECÍFICOS ---
     if (appt) {
         document.getElementById("modal-title").innerText = isEvent ? "Evento/Aviso" : "Detalhes da Visita";
-        renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin);
+        renderHeaderInfo(headerInfo, appt, isAdminOrMaster, isSuperAdmin);
         updateFormState();
-        renderHistoryLogs(appt, isAdmin);
+        renderHistoryLogs(appt, isAdminOrMaster);
 
         if (isEvent) {
             inpEventComment.value = appt.eventComment || "";
@@ -320,7 +321,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         } else {
             renderPropertiesInput(getPropertyList(appt), canInteractGeneral && !isEvent);
             // Clientes só editáveis se não bloqueado geral
-            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, isAdmin, appt);
+            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, isAdminOrMaster, appt);
         }
         inpStart.value = appt.startTime;
         inpEnd.value = appt.endTime;
@@ -488,16 +489,16 @@ function setupNewAppointmentUI(defaults, inpBroker, brokerStatic, btnChangeBroke
     updateFormState();
 }
 
-function renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin) {
+function renderHeaderInfo(headerInfo, appt, isAdminOrMaster, isSuperAdmin) {
     if(!headerInfo) return;
     const creationDate = appt.createdAt ? new Date(appt.createdAt).toLocaleString("pt-BR") : "N/A";
     let originalCreatorName = appt.createdByName;
     if (appt.history && appt.history.length > 0) originalCreatorName = appt.history[0].user; 
-    let idBadgeHtml = (isAdmin || isSuperAdmin) ? `<div class="id-badge">#${appt.id.slice(0, 5).toUpperCase()}</div>` : "";
+    let idBadgeHtml = (isAdminOrMaster || isSuperAdmin) ? `<div class="id-badge">#${appt.id.slice(0, 5).toUpperCase()}</div>` : "";
     let recurrenceIcon = appt.groupId ? `<span class="recurrence-icon"><i class="fas fa-sync-alt"></i></span>` : "";
 
     let ownerHtml = "";
-    if (isAdmin) {
+    if (isAdminOrMaster) {
         let options = "";
         const currentOwnerEmail = appt.createdBy;
         const sortedConsultants = [...state.availableConsultants].sort((a,b) => a.name.localeCompare(b.name));
@@ -513,8 +514,8 @@ function renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin) {
     headerInfo.innerHTML = `<div class="meta-header-container"><div class="meta-left-group">${ownerHtml}<span class="meta-info-text">Criado por <strong>${originalCreatorName}</strong> em ${creationDate} ${recurrenceIcon}</span></div>${idBadgeHtml}</div>`;
 }
 
-function renderHistoryLogs(appt, isAdmin) {
-    if (isAdmin && appt && appt.history && appt.history.length > 0) {
+function renderHistoryLogs(appt, isAdminOrMaster) {
+    if (isAdminOrMaster && appt && appt.history && appt.history.length > 0) {
         let historyContainer = document.getElementById("history-logs-container");
         if (!historyContainer) {
             historyContainer = document.createElement("div");
@@ -591,7 +592,7 @@ function setupShareSection(shareCheckboxes, shareSection, isCoreEditor, isLocked
     }
 }
 
-export function renderClientsInput(clients, formEditable, isCreator, isAdmin, apptContext = null) {
+export function renderClientsInput(clients, formEditable, isCreator, isAdminOrMaster, apptContext = null) {
     const clientsContainer = document.getElementById("clients-container");
     clientsContainer.innerHTML = "";
     if (!clients || clients.length === 0) {

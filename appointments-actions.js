@@ -11,6 +11,8 @@ export async function saveAppointmentAction(formData) {
     const id = formData.id;
     const isNew = !id;
     const isAdmin = state.userProfile.role === "admin";
+    const isMasterOrGl = state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com";
+    const isAdminOrMaster = isAdmin || isMasterOrGl;
 
     let oldAppt = null;
     if (!isNew) {
@@ -24,7 +26,7 @@ export async function saveAppointmentAction(formData) {
     let finalOwnerEmail = isNew ? state.userProfile.email : oldAppt.createdBy;
     let finalOwnerName = isNew ? state.userProfile.name : oldAppt.createdByName;
 
-    if (isAdmin && formData.adminSelectedOwner) {
+    if (isAdminOrMaster && formData.adminSelectedOwner) {
         finalOwnerEmail = formData.adminSelectedOwner;
         const consultantObj = state.availableConsultants ? state.availableConsultants.find(c => c.email === finalOwnerEmail) : null;
         finalOwnerName = consultantObj ? consultantObj.name : (finalOwnerEmail === oldAppt?.createdBy ? oldAppt.createdByName : finalOwnerEmail);
@@ -138,7 +140,7 @@ export async function saveAppointmentAction(formData) {
     }
 
     // --- SALVAR NO FIRESTORE ---
-    const isRecurrent = (isNew && isAdmin && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
+    const isRecurrent = (isNew && isAdminOrMaster && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
 
     try {
         if (isRecurrent) {
