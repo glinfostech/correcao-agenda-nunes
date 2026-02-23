@@ -190,14 +190,15 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // --- REGRAS ESPECÍFICAS PEDIDAS NO PROMPT ---
     
-    // Agendamento encerrado (por dia/horário): nenhum perfil pode alterar informações.
-    const canEditStatus = canSaveAny && !isLocked;
+    // Status pode ser editado por qualquer perfil com acesso ao agendamento,
+    // independentemente de já ter passado do horário.
+    const canEditStatus = canSaveAny;
 
-    // Quem pode interagir com campos gerais
+    // Demais campos só podem ser editados antes do horário passar.
     const canInteractGeneral = canSaveAny && !isLocked;
 
-    // Botão salvar aparece apenas quando realmente pode editar
-    const showSaveButton = canInteractGeneral;
+    // Salvar aparece se puder editar qualquer campo (incluindo Status em horário passado).
+    const showSaveButton = canInteractGeneral || canEditStatus;
     
     // 4. Pode deletar?
     // Se estiver bloqueado (isLocked), NINGUÉM pode deletar. O botão vai sumir.
@@ -225,8 +226,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
         // --- MUDANÇA 1: Status segue permissão específica ---
         if(inpStatus) inpStatus.disabled = !canEditStatus;
-        if(inpStatusObs) inpStatusObs.disabled = !canEditStatus;
-        if(inpStatusRented) inpStatusRented.disabled = !canEditStatus; // NOVO: Segue a mesma regra do status
+        // Em horário passado, apenas o select de Status continua editável.
+        if(inpStatusObs) inpStatusObs.disabled = !canInteractGeneral;
+        if(inpStatusRented) inpStatusRented.disabled = !canInteractGeneral;
 
         const ownerSelect = document.getElementById("form-owner-select");
         if(ownerSelect) ownerSelect.disabled = disableCore;

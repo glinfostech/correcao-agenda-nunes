@@ -34,7 +34,7 @@ export function isAppointmentClosed(dateStr, timeStr) {
 }
 
 export function getLockMessage() {
-    return "Agendamento encerrado por data/horário. Não é possível alterar.";
+    return "Horário passado. Somente o campo Status pode ser alterado.";
 }
 
 export function isTimeLocked(dateStr, timeStr) {

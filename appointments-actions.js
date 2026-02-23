@@ -19,9 +19,7 @@ export async function saveAppointmentAction(formData) {
     }
 
 
-    if (!isNew && isAppointmentClosed(oldAppt.date, oldAppt.startTime)) {
-        throw new Error(getLockMessage());
-    }
+    const isClosed = !isNew && isAppointmentClosed(oldAppt.date, oldAppt.startTime);
 
     let finalOwnerEmail = isNew ? state.userProfile.email : oldAppt.createdBy;
     let finalOwnerName = isNew ? state.userProfile.name : oldAppt.createdByName;
@@ -38,6 +36,13 @@ export async function saveAppointmentAction(formData) {
 
     // Objeto base para Salvar
     const nowIso = new Date().toISOString();
+
+    const hasChanged = (oldValue, newValue) => {
+        if (Array.isArray(oldValue) || Array.isArray(newValue) || (oldValue && typeof oldValue === "object") || (newValue && typeof newValue === "object")) {
+            return JSON.stringify(oldValue ?? null) !== JSON.stringify(newValue ?? null);
+        }
+        return String(oldValue ?? "") !== String(newValue ?? "");
+    };
 
     const appointmentData = {
         brokerId: formData.brokerId,
@@ -68,6 +73,31 @@ export async function saveAppointmentAction(formData) {
         isEdited: !isNew,
         editedAt: !isNew ? nowIso : null
     };
+
+    if (isClosed) {
+        const immutableChanges = [
+            ["Corretor", oldAppt.brokerId, appointmentData.brokerId],
+            ["Data", oldAppt.date, appointmentData.date],
+            ["Início", oldAppt.startTime, appointmentData.startTime],
+            ["Fim", oldAppt.endTime, appointmentData.endTime],
+            ["Tipo", oldAppt.isEvent, appointmentData.isEvent],
+            ["Comentário de Evento", oldAppt.eventComment || "", appointmentData.eventComment || ""],
+            ["Imóveis", oldAppt.properties || [], appointmentData.properties || []],
+            ["Ref", oldAppt.reference || "", appointmentData.reference || ""],
+            ["Endereço", oldAppt.propertyAddress || "", appointmentData.propertyAddress || ""],
+            ["Clientes", oldAppt.clients || [], appointmentData.clients || []],
+            ["Compartilhamento", oldAppt.sharedWith || [], appointmentData.sharedWith || []],
+            ["Responsável", oldAppt.createdBy || "", appointmentData.createdBy || ""],
+            ["Nome Responsável", oldAppt.createdByName || "", appointmentData.createdByName || ""],
+            ["Consultora Vinculada", oldAppt.linkedConsultantEmail || "", appointmentData.linkedConsultantEmail || ""],
+            ["Status Obs.", oldAppt.statusObservation || "", appointmentData.statusObservation || ""],
+            ["Imóvel Alugado", Boolean(oldAppt.isRented), Boolean(appointmentData.isRented)]
+        ].filter(([, oldVal, newVal]) => hasChanged(oldVal, newVal));
+
+        if (immutableChanges.length > 0) {
+            throw new Error(getLockMessage());
+        }
+    }
 
     if (isNew) {
         appointmentData.createdAt = nowIso;
