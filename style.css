@@ -477,6 +477,11 @@ body.theme-dark .grid-slot:hover {
 .ranking-dark-table .rank-col {
     white-space: nowrap;
 }
+.ranking-dark-table tfoot {
+    position: sticky;
+    bottom: 0;
+    z-index: 12;
+}
 .rank-medal {
     font-size: 1.1em;
 }
@@ -485,6 +490,7 @@ body.theme-dark .grid-slot:hover {
     font-weight: 800;
     color: #f3f4f6;
     border-top: 1px solid #333;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
 }
 .rank-empty {
     text-align: center;
