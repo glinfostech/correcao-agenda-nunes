@@ -171,9 +171,11 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // --- PERMISSÕES (LÓGICA AJUSTADA) ---
     const amICreator = appt ? appt.createdBy === state.userProfile.email : true; 
-    const isAdmin = state.userProfile.role === "admin";
-    const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com");
-    const isAdminOrMaster = isAdmin || isSuperAdmin;
+    const role = String(state.userProfile.role || "").trim().toLowerCase();
+    const isAdmin = role === "admin";
+    const isMaster = role === "master";
+    const isSuperAdmin = isMaster || state.userProfile.email === "gl.infostech@gmail.com";
+    const isAdminOrMaster = isAdmin || isMaster;
     const amIShared = appt && appt.sharedWith && appt.sharedWith.includes(state.userProfile.email);
     
     // CoreEditor: Admin ou Criador

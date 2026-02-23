@@ -10,9 +10,10 @@ import { isAppointmentClosed, getLockMessage } from "./appointments-core.js";
 export async function saveAppointmentAction(formData) {
     const id = formData.id;
     const isNew = !id;
-    const isAdmin = state.userProfile.role === "admin";
-    const isMasterOrGl = state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com";
-    const isAdminOrMaster = isAdmin || isMasterOrGl;
+    const role = String(state.userProfile.role || "").trim().toLowerCase();
+    const isAdmin = role === "admin";
+    const isMaster = role === "master";
+    const isAdminOrMaster = isAdmin || isMaster;
 
     let oldAppt = null;
     if (!isNew) {
