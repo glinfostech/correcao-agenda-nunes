@@ -173,10 +173,11 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     const amICreator = appt ? appt.createdBy === state.userProfile.email : true; 
     const isAdmin = state.userProfile.role === "admin";
     const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com");
+    const isManager = isAdmin || isSuperAdmin;
     const amIShared = appt && appt.sharedWith && appt.sharedWith.includes(state.userProfile.email);
     
     // CoreEditor: Admin ou Criador
-    const isCoreEditor = (isAdmin || amICreator);
+    const isCoreEditor = (isManager || amICreator);
     // CanSaveAny: Pode salvar se for Editor, Criador ou Compartilhado
     const canSaveAny = (isCoreEditor || amIShared);
     
@@ -192,7 +193,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     
     // 1. Quem pode editar o STATUS?
     // Regra: Criador/Admin pode SEMPRE. Compartilhados só se NÃO estiver bloqueado.
-    const canEditStatus = (amICreator || isAdmin) || (canSaveAny && !isLocked);
+    const canEditStatus = (amICreator || isManager) || (canSaveAny && !isLocked);
 
     // 2. Quem pode interagir com o GERAL (Campos principais)?
     // Regra original: Ninguém se estiver bloqueado.
@@ -200,7 +201,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // 3. O botão SALVAR deve aparecer?
     // Aparece se puder interagir no geral OU se puder editar Status (mesmo bloqueado)
-    const showSaveButton = canInteractGeneral || (isLocked && (amICreator || isAdmin));
+    const showSaveButton = canInteractGeneral || (isLocked && (amICreator || isManager));
     
     // 4. Pode deletar?
     const createdAtMs = appt?.createdAt ? new Date(appt.createdAt).getTime() : 0;
@@ -237,6 +238,11 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         const ownerSelect = document.getElementById("form-owner-select");
         if(ownerSelect) ownerSelect.disabled = disableCore;
 
+        const canUseRecurrence = isManager && canInteractGeneral && isEvt;
+        if (recurrenceSection) {
+            recurrenceSection.classList.toggle("hidden", !canUseRecurrence);
+        }
+
         if (isEvt) {
             propertiesContainer.classList.add("hidden");
             if (btnAddProperty) btnAddProperty.classList.add("hidden");
@@ -261,13 +267,10 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     chkIsEvent.onclick = updateFormState;
     updateFormState(); // Init
 
-    // --- RECORRÊNCIA (ADMIN) ---
-    if (isAdmin && !appt) {
-        recurrenceSection.classList.remove("hidden");
+    // --- RECORRÊNCIA (ADMIN/MASTER) ---
+    if (isManager && !appt) {
         document.getElementById("recurrence-end-date").value = "";
         document.querySelectorAll("input[name='recurrence-day']").forEach(c => c.checked = false);
-    } else {
-        recurrenceSection.classList.add("hidden");
     }
 
     // --- BOTÕES DE AÇÃO VISUAL ---
@@ -314,9 +317,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     // --- PREENCHIMENTO DE DADOS ESPECÍFICOS ---
     if (appt) {
         document.getElementById("modal-title").innerText = isEvent ? "Evento/Aviso" : "Detalhes da Visita";
-        renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin);
+        renderHeaderInfo(headerInfo, appt, isManager, isSuperAdmin);
         updateFormState();
-        renderHistoryLogs(appt, isAdmin);
+        renderHistoryLogs(appt, isManager);
 
         if (isEvent) {
             inpEventComment.value = appt.eventComment || "";
@@ -324,7 +327,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         } else {
             renderPropertiesInput(getPropertyList(appt), canInteractGeneral && !isEvent);
             // Clientes só editáveis se não bloqueado geral
-            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, isAdmin, appt);
+            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, isManager, appt);
         }
         inpStart.value = appt.startTime;
         inpEnd.value = appt.endTime;

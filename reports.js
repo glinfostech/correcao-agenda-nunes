@@ -104,7 +104,27 @@ window.closeReportModal = closeReportModal;
 window.generateReport = generateReport;
 window.changeReportPage = changeReportPage;
 
+export function resetReportsState() {
+    currentReportData = [];
+
+    const modal = document.getElementById("report-modal");
+    if (modal) modal.classList.remove("open");
+
+    const start = document.getElementById("rep-start-date");
+    const end = document.getElementById("rep-end-date");
+    const broker = document.getElementById("rep-broker");
+    const consultant = document.getElementById("rep-consultant");
+    const results = document.getElementById("report-results-area");
+
+    if (start) start.value = "";
+    if (end) end.value = "";
+    if (broker) broker.value = "";
+    if (consultant) consultant.value = "";
+    if (results) results.innerHTML = '<div class="placeholder-msg">Selecione os filtros e clique em Gerar</div>';
+}
+
 function openReportModal() {
+    currentReportData = [];
     populateConsultants();
 
     const now = new Date();
