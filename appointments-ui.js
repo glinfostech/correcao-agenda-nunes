@@ -4,7 +4,7 @@ import { state, BROKERS } from "./config.js";
 import { addClientRow, addPropertyRow } from "./interactions.js";
 import { getClientList, getPropertyList } from "./utils.js";
 import { 
-    isTimeLocked, 
+    isAppointmentClosed, 
     getLockMessage, 
     createWhatsappButton,
     getConsultantName
@@ -182,7 +182,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     
     // Lógica de Trava Temporal
     let isLocked = false;
-    if (appt && isTimeLocked(appt.date, appt.startTime) && !isSuperAdmin) {
+    if (appt && isAppointmentClosed(appt.date, appt.startTime)) {
         isLocked = true;
         lockWarning.style.display = "block";
         lockWarning.innerText = getLockMessage(appt.date);
@@ -190,22 +190,16 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // --- REGRAS ESPECÍFICAS PEDIDAS NO PROMPT ---
     
-    // 1. Quem pode editar o STATUS?
-    // Regra: Criador/Admin pode SEMPRE. Compartilhados só se NÃO estiver bloqueado.
-    const canEditStatus = (amICreator || isAdmin) || (canSaveAny && !isLocked);
+    // Agendamento encerrado (por dia/horário): nenhum perfil pode alterar informações.
+    const canEditStatus = canSaveAny && !isLocked;
 
-    // 2. Quem pode interagir com o GERAL (Campos principais)?
-    // Regra original: Ninguém se estiver bloqueado.
+    // Quem pode interagir com campos gerais
     const canInteractGeneral = canSaveAny && !isLocked;
 
-    // 3. O botão SALVAR deve aparecer?
-    // Aparece se puder interagir no geral OU se puder editar Status (mesmo bloqueado)
-    const showSaveButton = canInteractGeneral || (isLocked && (amICreator || isAdmin));
+    // Botão salvar aparece apenas quando realmente pode editar
+    const showSaveButton = canInteractGeneral;
     
     // 4. Pode deletar?
-    const createdAtMs = appt?.createdAt ? new Date(appt.createdAt).getTime() : 0;
-    const withinGraceWindow = Boolean(createdAtMs) && (Date.now() - createdAtMs <= 15 * 60 * 1000);
-    
     // Se estiver bloqueado (isLocked), NINGUÉM pode deletar. O botão vai sumir.
     const canDelete = isCoreEditor && !isLocked;
 

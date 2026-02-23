@@ -4,43 +4,24 @@ import { checkOverlap, showDialog } from "./utils.js";
 import { 
     doc, addDoc, updateDoc, collection, writeBatch
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { isTimeLocked } from "./appointments-core.js";
+import { isAppointmentClosed, getLockMessage } from "./appointments-core.js";
 
 // --- AÇÃO: SALVAR AGENDAMENTO ---
 export async function saveAppointmentAction(formData) {
     const id = formData.id;
     const isNew = !id;
     const isAdmin = state.userProfile.role === "admin";
-    // Super Admin: gl.infostech@gmail.com (Bypass total)
-    const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com"); 
-    
+
     let oldAppt = null;
     if (!isNew) {
         oldAppt = state.appointments.find(a => a.id === id);
         if (!oldAppt) throw new Error("Erro: Visita original não encontrada.");
     }
 
-    const amICreator = isNew ? true : (oldAppt.createdBy === state.userProfile.email);
 
-    let isLocked = false;
-    if (!isNew && !isSuperAdmin) {
-        isLocked = isTimeLocked(oldAppt.date, oldAppt.startTime);
+    if (!isNew && isAppointmentClosed(oldAppt.date, oldAppt.startTime)) {
+        throw new Error(getLockMessage());
     }
-
-    // --- NOVA VALIDAÇÃO DE SEGURANÇA ---
-    if (isLocked && !isSuperAdmin) {
-        const proposedOwner = (isAdmin && formData.adminSelectedOwner) ? formData.adminSelectedOwner : (oldAppt.createdBy);
-        
-        const brokerChanged = (oldAppt.brokerId !== formData.brokerId);
-        const ownerChanged = (oldAppt.createdBy !== proposedOwner);
-
-        if (brokerChanged || ownerChanged) {
-            if (!amICreator) {
-                throw new Error("Ação Bloqueada: Como a visita já excedeu o tempo limite, apenas o Criador pode alterar o Corretor ou Responsável.");
-            }
-        }
-    }
-    // --------------------------------------------------
 
     let finalOwnerEmail = isNew ? state.userProfile.email : oldAppt.createdBy;
     let finalOwnerName = isNew ? state.userProfile.name : oldAppt.createdByName;
@@ -174,6 +155,10 @@ export async function saveAppointmentAction(formData) {
 // --- AÇÃO: DELETAR AGENDAMENTO ---
 export async function deleteAppointmentAction(appt) {
     try {
+        if (isAppointmentClosed(appt?.date, appt?.startTime)) {
+            throw new Error(getLockMessage());
+        }
+
         await updateDoc(doc(db, "appointments", appt.id), {
             deletedAt: new Date().toISOString(),
             deletedBy: state.userProfile?.email || "unknown"
