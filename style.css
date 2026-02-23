@@ -340,7 +340,7 @@ body.theme-dark .grid-slot:hover {
 }
 
 /* Conteúdo e Tabela */
-.report-results { flex: 1; overflow: hidden; background: #f1f5f9; padding: 0; display: flex; flex-direction: column; position: relative; }
+.report-results { flex: 1; overflow: auto; background: #f1f5f9; padding: 0; display: flex; flex-direction: column; position: relative; min-height: 0; }
 
 .placeholder-msg {
     display: flex; justify-content: center; align-items: center; height: 100%;
@@ -425,6 +425,10 @@ body.theme-dark .grid-slot:hover {
     border-radius: 10px;
     margin: 14px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 .ranking-title {
     padding: 14px 16px;
@@ -441,11 +445,15 @@ body.theme-dark .grid-slot:hover {
 }
 .ranking-table-container {
     background: #0f0f0f;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 }
 .ranking-dark-table {
     background: #121212;
     color: #e5e7eb;
     border-collapse: collapse;
+    min-width: 920px;
 }
 .ranking-dark-table th {
     background: #1b1b1b;
@@ -857,5 +865,4 @@ body.theme-dark .search-input::placeholder {
     opacity: 1;
     filter: none;
 }
-
 
