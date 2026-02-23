@@ -1,7 +1,11 @@
 import { db, state, BROKERS } from "./config.js";
-import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { collection, query, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
 
 let currentReportData = [];
+let reportSnapshotUnsubscribe = null;
+let reportAppointmentsCache = [];
+let reportFilters = null;
 
 function normalizeRole(role) {
     return String(role || "").trim().toLowerCase();
@@ -104,7 +108,31 @@ window.closeReportModal = closeReportModal;
 window.generateReport = generateReport;
 window.changeReportPage = changeReportPage;
 
+export function resetReportsState() {
+    stopReportSnapshotListener();
+    currentReportData = [];
+    reportAppointmentsCache = [];
+    reportFilters = null;
+
+    const modal = document.getElementById("report-modal");
+    if (modal) modal.classList.remove("open");
+
+    const start = document.getElementById("rep-start-date");
+    const end = document.getElementById("rep-end-date");
+    const broker = document.getElementById("rep-broker");
+    const consultant = document.getElementById("rep-consultant");
+    const results = document.getElementById("report-results-area");
+
+    if (start) start.value = "";
+    if (end) end.value = "";
+    if (broker) broker.value = "";
+    if (consultant) consultant.value = "";
+    if (results) results.innerHTML = '<div class="placeholder-msg">Selecione os filtros e clique em Gerar</div>';
+}
+
 function openReportModal() {
+    currentReportData = [];
+    reportFilters = null;
     populateConsultants();
 
     const now = new Date();
@@ -138,7 +166,55 @@ function populateConsultants() {
     select.value = currentVal;
 }
 
+function ensureReportSnapshotListener() {
+    if (reportSnapshotUnsubscribe) return;
+
+    reportSnapshotUnsubscribe = onSnapshot(
+        query(collection(db, "appointments")),
+        (snapshot) => {
+            reportAppointmentsCache = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            if (reportFilters) {
+                const filtered = filterAppointmentsForReport(reportAppointmentsCache, reportFilters);
+                currentReportData = buildRankingData(filtered);
+                renderReportTable(reportFilters.startDate, reportFilters.endDate);
+            }
+        },
+        (error) => {
+            console.error("Erro ao atualizar relatório em tempo real:", error);
+        }
+    );
+}
+
+function stopReportSnapshotListener() {
+    if (!reportSnapshotUnsubscribe) return;
+    reportSnapshotUnsubscribe();
+    reportSnapshotUnsubscribe = null;
+}
+
+function filterAppointmentsForReport(appointments, filters) {
+    const { startDate, endDate, brokerId, consultantName, consultantEmail } = filters;
+
+    return appointments.filter((item) => {
+        if (item.isEvent) return false;
+        if (item.deletedAt) return false;
+        if (!item.date) return false;
+        if (item.date < startDate || item.date > endDate) return false;
+        if (brokerId && item.brokerId !== brokerId) return false;
+
+        if (consultantName) {
+            const sharedList = Array.isArray(item.sharedWith) ? item.sharedWith : [];
+            const isOwnerByName = item.createdByName === consultantName;
+            const isOwnerByEmail = consultantEmail && item.createdBy === consultantEmail;
+            const isShared = consultantEmail && sharedList.includes(consultantEmail);
+            if (!isOwnerByName && !isOwnerByEmail && !isShared) return false;
+        }
+
+        return true;
+    });
+}
+
 async function generateReport() {
+
     const startDate = document.getElementById("rep-start-date").value;
     const endDate = document.getElementById("rep-end-date").value;
     const brokerId = document.getElementById("rep-broker").value;
@@ -154,26 +230,17 @@ async function generateReport() {
     const container = document.getElementById("report-results-area");
     container.innerHTML = '<div class="loading-spinner">Carregando ranking...</div>';
 
-    try {
-        const snapshot = await getDocs(query(collection(db, "appointments")));
-        const filtered = snapshot.docs
-            .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .filter((item) => {
-                if (item.isEvent) return false;
-                if (item.deletedAt) return false;
-                if (!item.date) return false;
-                if (item.date < startDate || item.date > endDate) return false;
-                if (brokerId && item.brokerId !== brokerId) return false;
-                if (consultantName) {
-                    const sharedList = Array.isArray(item.sharedWith) ? item.sharedWith : [];
-                    const isOwnerByName = item.createdByName === consultantName;
-                    const isOwnerByEmail = consultantEmail && item.createdBy === consultantEmail;
-                    const isShared = consultantEmail && sharedList.includes(consultantEmail);
-                    if (!isOwnerByName && !isOwnerByEmail && !isShared) return false;
-                }
-                return true;
-            });
+    reportFilters = { startDate, endDate, brokerId, consultantName, consultantEmail };
 
+    try {
+        ensureReportSnapshotListener();
+
+        if (reportAppointmentsCache.length === 0) {
+            const snapshot = await getDocs(query(collection(db, "appointments")));
+            reportAppointmentsCache = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        }
+
+        const filtered = filterAppointmentsForReport(reportAppointmentsCache, reportFilters);
         currentReportData = buildRankingData(filtered);
         renderReportTable(startDate, endDate);
     } catch (err) {
@@ -298,7 +365,7 @@ const taxaEfetivaGeral = totals.realizadas > 0 ? (totals.alugados / totals.reali
                         <th>Corretor</th>
                         <th>Visitas Totais</th>
                         <th>Canceladas</th>
-                        <th>Visitas Realizadas</th>
+                        <th>Visitas Efetivas</th>
                         <th>Alugados</th>
                         <th class="th-right">Taxa Conversão</th>
                         <th class="th-right">Taxa Efetiva</th>

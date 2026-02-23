@@ -13,6 +13,7 @@ export async function saveAppointmentAction(formData) {
     const isAdmin = state.userProfile.role === "admin";
     // Super Admin: gl.infostech@gmail.com (Bypass total)
     const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com"); 
+    const isManager = isAdmin || isSuperAdmin;
     
     let oldAppt = null;
     if (!isNew) {
@@ -29,7 +30,7 @@ export async function saveAppointmentAction(formData) {
 
     // --- NOVA VALIDAÇÃO DE SEGURANÇA ---
     if (isLocked && !isSuperAdmin) {
-        const proposedOwner = (isAdmin && formData.adminSelectedOwner) ? formData.adminSelectedOwner : (oldAppt.createdBy);
+        const proposedOwner = (isManager && formData.adminSelectedOwner) ? formData.adminSelectedOwner : (oldAppt.createdBy);
         
         const brokerChanged = (oldAppt.brokerId !== formData.brokerId);
         const ownerChanged = (oldAppt.createdBy !== proposedOwner);
@@ -45,7 +46,7 @@ export async function saveAppointmentAction(formData) {
     let finalOwnerEmail = isNew ? state.userProfile.email : oldAppt.createdBy;
     let finalOwnerName = isNew ? state.userProfile.name : oldAppt.createdByName;
 
-    if (isAdmin && formData.adminSelectedOwner) {
+    if (isManager && formData.adminSelectedOwner) {
         finalOwnerEmail = formData.adminSelectedOwner;
         const consultantObj = state.availableConsultants ? state.availableConsultants.find(c => c.email === finalOwnerEmail) : null;
         finalOwnerName = consultantObj ? consultantObj.name : (finalOwnerEmail === oldAppt?.createdBy ? oldAppt.createdByName : finalOwnerEmail);
@@ -127,7 +128,7 @@ export async function saveAppointmentAction(formData) {
     }
 
     // --- SALVAR NO FIRESTORE ---
-    const isRecurrent = (isNew && isAdmin && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
+    const isRecurrent = (isNew && isManager && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
 
     try {
         if (isRecurrent) {
