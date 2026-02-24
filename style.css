@@ -480,10 +480,14 @@ body.theme-dark .grid-slot:hover {
     font-size: 1.1em;
 }
 .ranking-dark-table tfoot .total-geral-row td {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
     background: #161616;
     font-weight: 800;
     color: #f3f4f6;
     border-top: 1px solid #333;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
 }
 .rank-empty {
     text-align: center;
