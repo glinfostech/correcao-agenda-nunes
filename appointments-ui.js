@@ -290,8 +290,8 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
                 renderWhatsappButton();
             }
             
-            enforceClientRowPermissions(isLocked, isCoreEditor, false);
-            enforcePropertyRowPermissions(isLocked, isCoreEditor, false);
+            enforceClientRowPermissions(isLocked, canManageAll, false);
+            enforcePropertyRowPermissions(isLocked, canManageAll, false);
         }
     };
 
@@ -389,8 +389,8 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         if(onDeleteCallback) onDeleteCallback(appt);
     };
     
-    setupClientObserver(enforceClientRowPermissions, isLocked, isCoreEditor, chkIsEvent);
-    setupPropertyObserver(enforcePropertyRowPermissions, isLocked, isCoreEditor, chkIsEvent);
+    setupClientObserver(enforceClientRowPermissions, isLocked, canManageAll, chkIsEvent);
+    setupPropertyObserver(enforcePropertyRowPermissions, isLocked, canManageAll, chkIsEvent);
 }
 
 // --- FUNÇÕES AUXILIARES DE UI ---
@@ -442,17 +442,18 @@ function populateDateField(inpDate, dateStatic, btnChangeDate, appt, defaults) {
     inpDate.classList.remove("hidden");
 }
 
-function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
+function enforceClientRowPermissions(isLocked, canManageAll, isEvtMode) {
     const rows = document.querySelectorAll(".client-item-row");
     if(isEvtMode) return; 
 
     rows.forEach(row => {
         const addedByInput = row.querySelector(".client-added-by");
-        const rowOwner = addedByInput ? addedByInput.value : "";
-        const isMine = (rowOwner === state.userProfile.email);
+        const rowOwner = String(addedByInput ? addedByInput.value : "").trim().toLowerCase();
+        const myEmail = String(state.userProfile.email || "").trim().toLowerCase();
+        const isMine = (rowOwner === myEmail);
         
         // Clientes: Se está bloqueado, ninguém edita dados do cliente.
-        let canEditThisRow = (!isLocked) && (isCoreEditor || isMine);
+        let canEditThisRow = (!isLocked) && (canManageAll || isMine);
         
         const nameInp = row.querySelector(".client-name-input");
         const phoneInp = row.querySelector(".client-phone-input");
@@ -470,14 +471,14 @@ function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
     });
 }
 
-function setupClientObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
+function setupClientObserver(enforceFn, isLocked, canManageAll, chkIsEvent) {
     const clientsContainer = document.getElementById("clients-container");
     if(clientsContainer) {
         if(clientsContainer._permissionObserver) {
             clientsContainer._permissionObserver.disconnect();
         }
         const observer = new MutationObserver(() => {
-            enforceFn(isLocked, isCoreEditor, chkIsEvent.checked);
+            enforceFn(isLocked, canManageAll, chkIsEvent.checked);
         });
         observer.observe(clientsContainer, { childList: true, subtree: true });
         clientsContainer._permissionObserver = observer;
@@ -700,15 +701,16 @@ function togglePropertiesDisabled(disabled, disableRemove = false) {
     });
 }
 
-function enforcePropertyRowPermissions(isLocked, isCoreEditor, isEvtMode) {
+function enforcePropertyRowPermissions(isLocked, canManageAll, isEvtMode) {
     const rows = document.querySelectorAll(".property-item-row");
     if (isEvtMode) return;
 
     rows.forEach((row) => {
         const addedByInput = row.querySelector(".property-added-by");
-        const rowOwner = addedByInput ? addedByInput.value : "";
-        const isMine = rowOwner === state.userProfile.email;
-        const canEditThisRow = (!isLocked) && (isCoreEditor || isMine);
+        const rowOwner = String(addedByInput ? addedByInput.value : "").trim().toLowerCase();
+        const myEmail = String(state.userProfile.email || "").trim().toLowerCase();
+        const isMine = rowOwner === myEmail;
+        const canEditThisRow = (!isLocked) && (canManageAll || isMine);
 
         const refInp = row.querySelector(".property-reference-input");
         const addrInp = row.querySelector(".property-address-input");
@@ -725,14 +727,14 @@ function enforcePropertyRowPermissions(isLocked, isCoreEditor, isEvtMode) {
     });
 }
 
-function setupPropertyObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
+function setupPropertyObserver(enforceFn, isLocked, canManageAll, chkIsEvent) {
     const propertiesContainer = document.getElementById("properties-container");
     if (propertiesContainer) {
         if (propertiesContainer._permissionObserver) {
             propertiesContainer._permissionObserver.disconnect();
         }
         const observer = new MutationObserver(() => {
-            enforceFn(isLocked, isCoreEditor, chkIsEvent.checked);
+            enforceFn(isLocked, canManageAll, chkIsEvent.checked);
         });
         observer.observe(propertiesContainer, { childList: true, subtree: true });
         propertiesContainer._permissionObserver = observer;
