@@ -10,17 +10,29 @@ function normalizeRole(role) {
     return String(role || "").trim().toLowerCase();
 }
 
-export function initReports() {
-    if (!state.userProfile) return;
+function hasReportsAccess() {
+    const userRole = normalizeRole(state.userProfile?.role);
+    return userRole === "master" || userRole === "admin";
+}
 
-    const userRole = normalizeRole(state.userProfile.role);
-    if (userRole !== "master" && userRole !== "admin") return;
+function removeReportUi() {
+    document.querySelector(".btn-report")?.remove();
+    document.getElementById("report-modal")?.remove();
+}
+
+export function initReports() {
+    if (!hasReportsAccess()) {
+        removeReportUi();
+        return;
+    }
 
     injectReportButton();
     injectReportModal();
 }
 
 export function resetReportsState() {
+    removeReportUi();
+
     if (unsubscribeReportRealtime) {
         unsubscribeReportRealtime();
         unsubscribeReportRealtime = null;
@@ -37,8 +49,7 @@ export function resetReportsState() {
 }
 
 function injectReportButton() {
-    const controls = document.querySelector(".navbar .controls-section");
-    if (!controls || document.querySelector(".btn-report")) return;
+    if (document.querySelector(".btn-report")) return;
 
     const btn = document.createElement("button");
     btn.className = "btn-report";
@@ -46,7 +57,14 @@ function injectReportButton() {
     btn.innerHTML = `<i class="fas fa-chart-line"></i> Relatórios`;
     btn.onclick = openReportModal;
 
-    controls.prepend(btn);
+    const brandSection = document.querySelector(".navbar .brand-section");
+    if (brandSection) {
+        brandSection.appendChild(btn);
+        return;
+    }
+
+    const controls = document.querySelector(".navbar .controls-section");
+    if (controls) controls.prepend(btn);
 }
 
 function injectReportModal() {
@@ -120,6 +138,8 @@ window.changeReportPage = changeReportPage;
 window.resetReportsState = resetReportsState;
 
 function openReportModal() {
+    if (!hasReportsAccess()) return;
+
     populateConsultants();
 
     const now = new Date();

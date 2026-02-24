@@ -86,11 +86,17 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 }
 
 .brand-section { display: flex; align-items: center; gap: 10px; color: var(--primary); min-width: 0; }
+.brand-section .btn-report {
+    margin-left: 4px;
+    flex-shrink: 0;
+    padding: 7px 12px;
+    font-size: 0.85rem;
+}
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .brand-title {
-    white-space: normal;
+    white-space: nowrap;
     line-height: 1.1;
-    font-size: clamp(1.2rem, 1.5vw, 1.7rem);
+    font-size: clamp(1.05rem, 1.2vw, 1.35rem);
     font-weight: 800;
 }
 .brand-subtitle { display: none; }
@@ -135,9 +141,22 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 #current-date-label { min-width: 0; flex: 1; text-align: center; font-size: 0.9rem; font-weight: 700; text-transform: capitalize; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #date-static-display { font-family: system-ui, -apple-system, sans-serif; }
 
-.controls-section { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; }
+.controls-section { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; padding-left: 10px; border-left: 1px solid var(--nav-border); }
 .controls-section > * { max-width: 100%; }
+#view-broker-select {
+    width: 136px !important;
+    min-width: 110px;
+    max-width: 136px;
+    flex: 0 0 136px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .view-switcher { display: flex; align-items:center; background: #eef2f7; border:1px solid var(--nav-border); padding: 2px; border-radius: 8px; flex-shrink: 0; }
+#view-broker-select { order: 4; }
+.view-switcher { order: 1; }
+#btn-admin-panel { order: 3; }
+.user-menu { order: 5; }
 .view-btn { border: none; background: transparent; padding: 5px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; }
 .view-btn.active { background: #fff; color: var(--primary); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
@@ -746,7 +765,7 @@ body.theme-dark .form-group label {
     .brand-section { grid-area: brand; width: 100%; min-width: 0; }
     .search-container { grid-area: search; width: 100%; min-width: 0; max-width: 100%; }
     .date-nav { grid-area: date; width: 100%; justify-content: space-between; min-width: 0; max-width: 100%; }
-    .controls-section { grid-area: controls; width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; min-width: 0; }
+    .controls-section { grid-area: controls; width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; min-width: 0; padding-left: 0; border-left: none; }
     #current-date-label { font-size: 0.85rem; }
     .main-content { overflow: auto; }
     .calendar-container { min-width: max-content; }
@@ -762,9 +781,9 @@ body.theme-dark .form-group label {
 @media (max-width: 680px) {
     .navbar {padding: 8px; gap: 8px; grid-template-columns: 1fr; grid-template-areas: "brand" "search" "date" "controls"; align-items: stretch; }
     .brand-section { display: flex; }
-    .brand-title { font-size: 1.55rem; }
+    .brand-title { font-size: 1.15rem; white-space: nowrap; }
     .date-nav { width: 100%; justify-content: space-between; }
-    .controls-section { gap: 8px; justify-content: flex-start; width: 100%; }
+    .controls-section { gap: 8px; justify-content: flex-start; width: 100%; padding-left: 0; border-left: none; }
     #view-broker-select { width: 100% !important; }
     .controls-section .btn-report { width: 100%; justify-content: center; }
     .view-switcher { width: 100%; min-width: 0; }
@@ -788,7 +807,7 @@ body.theme-dark .form-group label {
 @media (max-width: 420px) {
     .navbar { padding: 8px; }
     .brand-section > i { font-size: 1.1rem !important; flex-shrink: 0; }
-    .brand-title { font-size: 1.25rem; }
+    .brand-title { font-size: 1.05rem; white-space: nowrap; }
     .search-input { font-size: 0.85rem; }
     .modal { padding: 10px; }
     .btn { padding: 8px 10px; }

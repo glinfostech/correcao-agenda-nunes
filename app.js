@@ -55,11 +55,7 @@ function initApp() {
     // Movemos a validação para fora do 'appInitialized'. 
     // Assim, sempre que trocar de usuário, ele refaz a checagem corretamente.
     setTimeout(() => {
-        const userRole = state.userProfile ? normalizeRole(state.userProfile.role) : "";
-        
-        if (userRole === "admin" || userRole === "master") {
-            initReports(); // Mostra para Admin e Master
-        } 
+        initReports();
         renderUserInfo();
     }, 1000);
     
