@@ -1,5 +1,6 @@
 import { db, state } from "./config.js";
 import { initAdminPanel } from "./admin-crud.js"; 
+import { resetReportsState } from "./reports.js";
 import { translateRole } from "./utils.js"; // <--- ADICIONE ESTA LINHA AQUI
 import { 
     collection, query, where, getDocs, doc, getDoc 
@@ -257,6 +258,7 @@ function handleLoginSuccess(profile, initAppCallback) {
 
 function handleLogout() {
     localStorage.removeItem(SESSION_KEY);
+    resetReportsState();
     state.userProfile = null;
     state.appInitialized = false;
     

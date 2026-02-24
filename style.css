@@ -480,10 +480,14 @@ body.theme-dark .grid-slot:hover {
     font-size: 1.1em;
 }
 .ranking-dark-table tfoot .total-geral-row td {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
     background: #161616;
     font-weight: 800;
     color: #f3f4f6;
     border-top: 1px solid #333;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
 }
 .rank-empty {
     text-align: center;
@@ -593,30 +597,58 @@ body.theme-dark #dialog-text {
 }
 .theme-toggle-btn i { font-size: 1rem; }
 
-/* Relatório com paleta do site */
-.ranking-dark-wrapper,
-.ranking-table-container,
-.ranking-dark-table {
-    background: var(--bg-card) !important;
-    color: var(--text-main) !important;
-    border-color: var(--border) !important;
+/* Relatório no visual da referência (tema claro) */
+body:not(.theme-dark) .ranking-dark-wrapper {
+    background: #f8fafc !important;
+    color: #1e293b !important;
+    border: 1px solid #dbe3ee !important;
+    border-radius: 10px;
 }
 
-.ranking-title,
-
-.ranking-dark-table th,
-.ranking-dark-table tfoot .total-geral-row td {
-    background: var(--bg-elevated) !important;
-    color: var(--text-main) !important;
-    border-color: var(--border) !important;
+body:not(.theme-dark) .ranking-title {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #dbe3ee !important;
 }
 
-.ranking-subtitle,
-.ranking-metric-item,
-.rank-empty {
-    color: var(--text-muted) !important;
+body:not(.theme-dark) .ranking-subtitle,
+body:not(.theme-dark) .rank-empty {
+    color: #334155 !important;
 }
 
+body:not(.theme-dark) .ranking-table-container {
+    background: #ffffff !important;
+    max-height: calc(90vh - 290px);
+    overflow: auto;
+}
+
+body:not(.theme-dark) .ranking-dark-table {
+    background: #ffffff !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table thead tr,
+body:not(.theme-dark) .ranking-dark-table tbody tr,
+body:not(.theme-dark) .ranking-dark-table tfoot tr {
+    background: #ffffff !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table th {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #dbe3ee !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table td {
+    color: #1e293b !important;
+    border-color: #dbe3ee !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table tfoot .total-geral-row td {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-top: 1px solid #dbe3ee !important;
+    box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.08);
+}
 
 body.theme-dark #admin-crud-screen {
     background-color: #0b1220;
@@ -704,37 +736,6 @@ body.theme-dark .form-group label {
 }
 
 
-/* Ajustes solicitados: relatório light com texto preto + calendário do modal branco */
-body:not(.theme-dark) .ranking-dark-table th,
-body:not(.theme-dark) .ranking-dark-table td,
-body:not(.theme-dark) .ranking-title,
-body:not(.theme-dark) .ranking-metric-item,
-body:not(.theme-dark) .ranking-subtitle,
-body:not(.theme-dark) .rank-empty,
-body:not(.theme-dark) .ranking-dark-table .broker-col,
-body:not(.theme-dark) .ranking-dark-table .pct-col {
-    color: #0f172a !important;
-}
-
-.ranking-dark-table th,
-.ranking-dark-table td,
-.ranking-dark-table tfoot .total-geral-row td {
-    border-color: #cbd5e1 !important;
-}
-
-body:not(.theme-dark) .ranking-metric-item {
-    background: #f8fafc !important;
-    color: #0f172a !important;
-}
-
-body.theme-dark .ranking-title,
-body.theme-dark .ranking-metric-item,
-body.theme-dark .ranking-subtitle,
-body.theme-dark .rank-empty,
-body.theme-dark .ranking-dark-table th,
-body.theme-dark .ranking-dark-table td {
-    color: #e5e7eb !important;
-}
 
 /* Bloco de data/hora/status no modal de criação/edição sempre branco para leitura */
 .visit-datetime-grid #form-status,
@@ -760,16 +761,11 @@ body.theme-dark .visit-datetime-grid > .form-group > div {
     border-color: #94a3b8 !important;
 }
 
-body:not(.theme-dark) .ranking-dark-table tbody tr,
-body:not(.theme-dark) .ranking-dark-table thead tr,
-body:not(.theme-dark) .ranking-dark-table tfoot tr {
-    background: #ffffff !important;
-}
-
 body.theme-dark .visit-datetime-grid select option {
     color: #0f172a;
     background: #ffffff;
 }
+
 /* ========================================================= */
 /* --- MODO LEITURA: TRAVAS DE SEGURANÇA PARA CORRETORES --- */
 /* ========================================================= */
