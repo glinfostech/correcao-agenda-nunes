@@ -135,13 +135,13 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 #current-date-label { min-width: 0; flex: 1; text-align: center; font-size: 0.9rem; font-weight: 700; text-transform: capitalize; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #date-static-display { font-family: system-ui, -apple-system, sans-serif; }
 
-.controls-section { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; }
+.controls-section { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; padding-left: 10px; border-left: 1px solid var(--nav-border); }
 .controls-section > * { max-width: 100%; }
 #view-broker-select {
-    width: 160px !important;
-    min-width: 120px;
-    max-width: 160px;
-    flex: 0 1 160px;
+    width: 136px !important;
+    min-width: 110px;
+    max-width: 136px;
+    flex: 0 0 136px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -760,7 +760,7 @@ body.theme-dark .form-group label {
     .brand-section { grid-area: brand; width: 100%; min-width: 0; }
     .search-container { grid-area: search; width: 100%; min-width: 0; max-width: 100%; }
     .date-nav { grid-area: date; width: 100%; justify-content: space-between; min-width: 0; max-width: 100%; }
-    .controls-section { grid-area: controls; width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; min-width: 0; }
+    .controls-section { grid-area: controls; width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; min-width: 0; padding-left: 0; border-left: none; }
     #current-date-label { font-size: 0.85rem; }
     .main-content { overflow: auto; }
     .calendar-container { min-width: max-content; }
@@ -778,7 +778,7 @@ body.theme-dark .form-group label {
     .brand-section { display: flex; }
     .brand-title { font-size: 1.55rem; }
     .date-nav { width: 100%; justify-content: space-between; }
-    .controls-section { gap: 8px; justify-content: flex-start; width: 100%; }
+    .controls-section { gap: 8px; justify-content: flex-start; width: 100%; padding-left: 0; border-left: none; }
     #view-broker-select { width: 100% !important; }
     .controls-section .btn-report { width: 100%; justify-content: center; }
     .view-switcher { width: 100%; min-width: 0; }
