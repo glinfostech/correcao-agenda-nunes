@@ -219,7 +219,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         const clientHeader = document.querySelector(".clients-header-row");
         
         // Bloqueio Geral (Data, Hora, Endereço...)
-        const disableCore = !isCoreEditor || isLocked;
+        const disableCore = isLocked || !isCoreEditor;
 
         inpBroker.disabled = disableCore;
         inpDate.disabled = disableCore;
@@ -232,10 +232,17 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         // --- MUDANÇA 1: Status segue permissão específica ---
         if(inpStatus) inpStatus.disabled = !canEditStatus;
         if(inpStatusObs) inpStatusObs.disabled = !canEditStatus;
-        if(inpStatusRented) inpStatusRented.disabled = !canEditStatus; // NOVO: Segue a mesma regra do status
+        if(inpStatusRented) inpStatusRented.disabled = !canEditStatus; 
 
         const ownerSelect = document.getElementById("form-owner-select");
         if(ownerSelect) ownerSelect.disabled = disableCore;
+
+        // --- RECORRÊNCIA (Apenas para novos agendamentos feitos por Admin) ---
+        if (isAdmin && !appt) {
+            recurrenceSection.classList.remove("hidden");
+        } else {
+            recurrenceSection.classList.add("hidden");
+        }
 
         if (isEvt) {
             propertiesContainer.classList.add("hidden");
@@ -244,15 +251,44 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
             if(clContainer) clContainer.classList.add("hidden");
             if(clientHeader) clientHeader.classList.add("hidden");
             if(btnAddClient) btnAddClient.classList.add("hidden");
+            
+            // Esconde Seção de Compartilhamento e WhatsApp se for Evento
+            shareSection.classList.add("hidden");
+            if (whatsContainer) whatsContainer.innerHTML = ""; 
         } else {
             propertiesContainer.classList.remove("hidden");
             if (btnAddProperty) btnAddProperty.classList.toggle("hidden", !canInteractGeneral);
             inpEventComment.parentElement.classList.add("hidden");
             if(clContainer) clContainer.classList.remove("hidden");
             if(clientHeader) clientHeader.classList.remove("hidden");
-            // Botão Adicionar Cliente: segue regra geral de interação (bloqueado se Locked)
             if(btnAddClient) btnAddClient.classList.toggle("hidden", !canInteractGeneral);
-            enforceClientRowPermissions(isLocked, isCoreEditor, chkIsEvent.checked);
+            
+            // --- CORREÇÃO: FAZ OS COMPARTILHADOS VOLTAREM ---
+            setupShareSection(shareCheckboxes, shareSection, isCoreEditor, isLocked, false, appt);
+            shareSection.classList.remove("hidden");
+
+            // --- LÓGICA PARA FAZER O BOTÃO WHATSAPP VOLTAR ---
+            if (appt && canInteractGeneral && whatsContainer) {
+                if (whatsContainer.innerHTML === "") {
+                    const clientList = getClientList(appt);
+                    let targetClient = null;
+                    
+                    if (isCoreEditor) {
+                        if (clientList.length > 0) targetClient = clientList[0];
+                    } else if (amIShared) {
+                        targetClient = clientList.find(c => c.addedBy === state.userProfile.email);
+                    }
+
+                    const brokerNameForWhats = BROKERS.find((b) => b.id === appt.brokerId)?.name || "Desconhecido";
+                    if (targetClient && targetClient.phone) {
+                        whatsContainer.appendChild(
+                            createWhatsappButton(targetClient.name, targetClient.phone, appt, brokerNameForWhats)
+                        );
+                    }
+                }
+            }
+            
+            enforceClientRowPermissions(isLocked, isCoreEditor, false);
         }
     };
 
