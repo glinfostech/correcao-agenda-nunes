@@ -101,20 +101,24 @@ export function createWhatsappButton(appt, brokerName, getClients = null) {
             }
         });
 
-        let selectedClient = uniqueClients[0];
-        if (uniqueClients.length > 1) {
-            selectedClient = await showDialog(
-                "Escolher telefone do cliente",
-                "Selecione um telefone deste agendamento para abrir o WhatsApp:",
-                uniqueClients.map((c) => ({
+        const selectedClient = await showDialog(
+            "Escolher telefone do cliente",
+            "Selecione um cliente deste agendamento para abrir o WhatsApp:",
+            [
+                ...uniqueClients.map((c) => ({
                     text: `${c.name} - ${c.phone}`,
                     value: c,
                     class: "btn-confirm"
-                }))
-            );
+                })),
+                {
+                    text: "Sair",
+                    value: null,
+                    class: "btn-cancel"
+                }
+            ]
+        );
 
-            if (!selectedClient) return;
-        }
+        if (!selectedClient) return;
 
         const cleanPhone = normalizePhone(selectedClient.phone);
         const dateParts = String(appt.date || "").split("-");

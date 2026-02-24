@@ -61,12 +61,10 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    4. NAVBAR E NAVEGAÇÃO
    ========================================================================== */
-.navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1rem; display: grid; grid-template-columns: minmax(220px, 290px) minmax(280px, 1fr) minmax(260px, 360px) auto; align-items: center; gap: 12px; z-index: 500; box-shadow: var(--shadow); }
-.brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; min-width: 0; overflow: hidden; }
-.brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
-.brand-title { white-space: nowrap; line-height: 1; font-size: clamp(1.45rem, 2.05vw, 1.95rem); font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
-.brand-subtitle { font-size: 0.65rem; color: #818cf8; font-style: italic; font-weight: 400; line-height: 1.1; white-space: nowrap; }
-
+.navbar { background: #ffffff; border: 1px solid #334155; border-radius: 12px; margin: 6px 8px 0; padding: 0.75rem 1rem; display: grid; grid-template-columns: minmax(300px, 380px) minmax(300px, 1fr) minmax(280px, 420px) auto; align-items: center; gap: 12px; z-index: 500; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+.brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; min-width: 0; }
+.brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.brand-title { white-space: nowrap; line-height: 1; font-size: clamp(1.55rem, 2vw, 2.6rem); font-weight: 800; overflow: visible; text-overflow: clip; }
 .controls-section { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; min-width: 0; }
 .controls-section > * { max-width: 100%; }
 
@@ -671,7 +669,7 @@ body.theme-dark .form-group label {
 
 
 @media (max-width: 1800px) {
-    .navbar { grid-template-columns: minmax(210px, 280px) minmax(260px, 1fr); align-items: stretch; }
+    .navbar { grid-template-columns: minmax(250px, 320px) minmax(260px, 1fr); align-items: stretch; }
     .brand-section { grid-column: 1; }
     .search-container { grid-column: 2; max-width: 620px; }
     .date-nav { grid-column: 1; }
@@ -729,7 +727,6 @@ body.theme-dark .form-group label {
     .navbar { padding: 8px; }
     .brand-section > i { font-size: 1.1rem !important; flex-shrink: 0; }
     .brand-title { font-size: 1.25rem; }
-    .brand-subtitle { font-size: 0.58rem !important; }
     .search-input { font-size: 0.85rem; }
     .modal { padding: 10px; }
     .btn { padding: 8px 10px; }
