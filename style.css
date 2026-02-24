@@ -61,14 +61,15 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    4. NAVBAR E NAVEGAÇÃO
    ========================================================================== */
-.navbar { background: #ffffff; border: 1px solid #334155; border-radius: 12px; margin: 6px 8px 0; padding: 0.5rem 0.9rem; min-height: 64px; display: grid; grid-template-columns: minmax(290px, 360px) minmax(280px, 1fr) minmax(300px, 390px) auto; align-items: center; gap: 10px; z-index: 500; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
-.brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; min-width: 0; }
+.navbar { background: #ffffff; border: 1px solid #334155; border-radius: 12px; margin: 6px 8px 0; padding: 0.48rem 0.8rem; min-height: 66px; display: grid; grid-template-columns: minmax(320px, 380px) minmax(300px, 1fr) minmax(310px, 430px) auto; align-items: center; gap: 10px; z-index: 500; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+.brand-section { display: flex; align-items: flex-start; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; min-width: 0; }
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.brand-title { white-space: nowrap; line-height: 1; font-size: clamp(1.5rem, 2vw, 3rem); font-weight: 800; overflow: visible; text-overflow: clip; }
+.brand-title { white-space: nowrap; line-height: 1; font-size: clamp(1.55rem, 2vw, 2.9rem); font-weight: 800; overflow: visible; text-overflow: clip; }
 .controls-section { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; }
+.brand-subtitle { margin-top: 1px; font-size: 0.62rem; color: #818cf8; font-style: italic; font-weight: 500; line-height: 1.05; white-space: nowrap; }
 .controls-section > * { max-width: 100%; }
 
-.date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; min-width: 0; justify-content: space-between; }
+.date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; min-width: 0; justify-content: space-between; min-height: 40px; }
 .nav-btn { background: white; border: 1px solid var(--border); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 #current-date-label { min-width: 0; text-align: center; font-size: 0.9rem; font-weight: 600; text-transform: capitalize; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #date-static-display { font-family: system-ui, -apple-system, sans-serif; }
@@ -78,15 +79,15 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 .view-btn.active { background: white; color: var(--primary); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
 .user-menu { display: flex; align-items: center; gap: 10px; border-left: 1px solid var(--border); padding-left: 12px; flex-shrink: 0; }
-.user-info { text-align: right; line-height: 1.2; display: block; }
+.user-info { text-align: right; line-height: 1.15; display: block; }
 .user-avatar { width: 36px; height: 36px; background: #e0e7ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
-.logout-btn { color: #ef4444; background: none; border: none; font-size: 0.95rem; cursor: pointer; padding: 0; text-decoration: none; }
+.logout-btn { color: #ef4444; background: none; border: none; font-size: 0.92rem; cursor: pointer; padding: 0; text-decoration: none; }
 
 /* ==========================================================================
    5. BUSCA (SEARCH)
    ========================================================================== */
-.search-container { position: relative; width: 100%; min-width: 0; max-width: 760px; justify-self: start; }
-.search-input { width: 100%; padding: 8px 10px 8px 35px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.9rem; background: #f1f5f9; transition: all 0.2s; }
+.search-container { position: relative; width: 100%; min-width: 0; max-width: 820px; justify-self: start; }
+.search-input { width: 100%; height: 40px; padding: 8px 10px 8px 35px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.9rem; background: #f1f5f9; transition: all 0.2s; }
 .search-input:focus { background: white; border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); }
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none; }
 
@@ -669,7 +670,7 @@ body.theme-dark .form-group label {
 
 
 @media (max-width: 1800px) {
-    .navbar { grid-template-columns: minmax(240px, 300px) minmax(260px, 1fr); align-items: stretch; }
+    .navbar { grid-template-columns: minmax(260px, 330px) minmax(260px, 1fr); align-items: stretch; }
     .brand-section { grid-column: 1; }
     .search-container { grid-column: 2; max-width: 620px; }
     .date-nav { grid-column: 1; }
