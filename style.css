@@ -87,7 +87,12 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 
 .brand-section { display: flex; align-items: center; gap: 10px; color: var(--primary); min-width: 0; }
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.brand-title { white-space: nowrap; line-height: 1.05; font-size: clamp(1.45rem, 1.8vw, 2.1rem); font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+.brand-title {
+    white-space: normal;
+    line-height: 1.1;
+    font-size: clamp(1.2rem, 1.5vw, 1.7rem);
+    font-weight: 800;
+}
 .brand-subtitle { display: none; }
 
 .search-container { position: relative; width: 100%; min-width: 180px; max-width: 100%; }
@@ -907,5 +912,4 @@ body.theme-dark .search-input::placeholder {
     opacity: 1;
     filter: none;
 }
-
 
