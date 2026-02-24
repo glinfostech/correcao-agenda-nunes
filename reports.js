@@ -10,17 +10,29 @@ function normalizeRole(role) {
     return String(role || "").trim().toLowerCase();
 }
 
-export function initReports() {
-    if (!state.userProfile) return;
+function hasReportsAccess() {
+    const userRole = normalizeRole(state.userProfile?.role);
+    return userRole === "master" || userRole === "admin";
+}
 
-    const userRole = normalizeRole(state.userProfile.role);
-    if (userRole !== "master" && userRole !== "admin") return;
+function removeReportUi() {
+    document.querySelector(".btn-report")?.remove();
+    document.getElementById("report-modal")?.remove();
+}
+
+export function initReports() {
+    if (!hasReportsAccess()) {
+        removeReportUi();
+        return;
+    }
 
     injectReportButton();
     injectReportModal();
 }
 
 export function resetReportsState() {
+    removeReportUi();
+
     if (unsubscribeReportRealtime) {
         unsubscribeReportRealtime();
         unsubscribeReportRealtime = null;
@@ -126,6 +138,8 @@ window.changeReportPage = changeReportPage;
 window.resetReportsState = resetReportsState;
 
 function openReportModal() {
+    if (!hasReportsAccess()) return;
+
     populateConsultants();
 
     const now = new Date();
