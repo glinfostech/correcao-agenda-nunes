@@ -113,7 +113,6 @@
             <i class="fas fa-calendar-alt" style="font-size: 1.4rem;"></i>
             <div class="brand-text-wrap">
                 <div class="brand-title">Agenda Nunes</div>
-                <div class="brand-subtitle">Criado por Gabriel Arruda T.I</div>
             </div>
         </div>
         <div class="search-container">
@@ -122,9 +121,9 @@
             <div id="search-dropdown" class="search-dropdown"><div id="search-results-list"></div></div>
         </div>
         <div class="date-nav">
-            <button class="nav-btn" onclick="changeDate(-1)"><i class="fas fa-chevron-left"></i></button>
+            <button class="nav-btn" type="button" aria-label="Data anterior" onclick="changeDate(-1)"><i class="fas fa-chevron-left"></i></button>
             <span id="current-date-label">Hoje</span>
-            <button class="nav-btn" onclick="changeDate(1)"><i class="fas fa-chevron-right"></i></button>
+            <button class="nav-btn" type="button" aria-label="Próxima data" onclick="changeDate(1)"><i class="fas fa-chevron-right"></i></button>
         </div>
         <div class="controls-section">
             <select id="view-broker-select" class="form-control hidden" style="width: auto;" onchange="changeBrokerFilter()"></select>
@@ -142,7 +141,7 @@
                     <div id="role-display" style="font-size: 0.7rem;">Cargo</div>
                 </div>
                 <div class="user-avatar" id="user-avatar-initial">U</div>
-                <button onclick="window.logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+                <button type="button" aria-label="Sair" onclick="window.logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </div>
     </header>
