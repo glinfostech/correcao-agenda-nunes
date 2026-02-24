@@ -239,12 +239,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         const ownerSelect = document.getElementById("form-owner-select");
         if(ownerSelect) ownerSelect.disabled = disableCore;
 
-        // --- RECORRÊNCIA (Apenas para novos agendamentos feitos por Admin) ---
-        if (canManageAll && !appt) {
-            recurrenceSection.classList.remove("hidden");
-        } else {
-            recurrenceSection.classList.add("hidden");
-        }
+        // --- RECORRÊNCIA (Admin/Master): exibe também ao converter visita em Evento/Aviso ---
+        const shouldShowRecurrence = canManageAll && isEvt;
+        recurrenceSection.classList.toggle("hidden", !shouldShowRecurrence);
 
         if (isEvt) {
             propertiesContainer.classList.add("hidden");
