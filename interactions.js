@@ -491,6 +491,18 @@ export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, ro
     divAddress.appendChild(labelAddress);
     divAddress.appendChild(inpAddress);
 
+    // EXIBIÇÃO VISUAL: "Cadastrado por..." (igual ao bloco de clientes)
+    if (hiddenAddedByName.value && hiddenAddedAt.value) {
+        const infoDiv = document.createElement("div");
+        infoDiv.style.fontSize = "0.7rem";
+        infoDiv.style.color = "#94a3b8";
+        infoDiv.style.marginTop = "4px";
+        infoDiv.style.fontStyle = "italic";
+        infoDiv.style.lineHeight = "1.2";
+        infoDiv.innerText = `Cadastrado por: ${hiddenAddedByName.value} em ${hiddenAddedAt.value}`;
+        divAddress.appendChild(infoDiv);
+    }
+
     // --- BOTÃO DE REMOVER (LIXEIRA) ---
     const btnContainer = document.createElement("div");
     btnContainer.className = "remove-btn-container"; // Adicionado classe para facilitar a busca
