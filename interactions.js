@@ -443,6 +443,7 @@ export function addPropertyRow(
     
     // Configura o Flexbox da linha
     row.style.display = "flex";
+    row.style.flexWrap = "wrap";
     row.style.gap = "10px";
     row.style.marginBottom = "10px";
     
@@ -468,17 +469,6 @@ export function addPropertyRow(
     
     divRef.appendChild(labelRef);
     divRef.appendChild(inpRef);
-
-    if (hiddenAddedByName.value && hiddenAddedAt.value) {
-        const infoDiv = document.createElement("div");
-        infoDiv.style.fontSize = "0.7rem";
-        infoDiv.style.color = "#94a3b8";
-        infoDiv.style.marginTop = "4px";
-        infoDiv.style.fontStyle = "italic";
-        infoDiv.style.lineHeight = "1.2";
-        infoDiv.innerText = `Cadastrado por: ${hiddenAddedByName.value} em ${hiddenAddedAt.value}`;
-        divRef.appendChild(infoDiv);
-    }
 
     // --- CAMPO ENDEREÇO ---
     const divAddress = document.createElement("div");
@@ -544,6 +534,20 @@ export function addPropertyRow(
     row.appendChild(divRef);
     row.appendChild(divAddress);
     row.appendChild(btnContainer);
+
+    if (hiddenAddedByName.value && hiddenAddedAt.value) {
+        const infoDiv = document.createElement("div");
+        infoDiv.style.flex = "1 0 100%";
+        infoDiv.style.fontSize = "0.7rem";
+        infoDiv.style.color = "#94a3b8";
+        infoDiv.style.marginTop = "-4px";
+        infoDiv.style.fontStyle = "italic";
+        infoDiv.style.lineHeight = "1.2";
+        infoDiv.style.paddingLeft = "0";
+        infoDiv.innerText = `Cadastrado por: ${hiddenAddedByName.value} em ${hiddenAddedAt.value}`;
+        row.appendChild(infoDiv);
+    }
+
     container.appendChild(row);
 
     // --- ATUALIZAÇÃO IMEDIATA DO LIXO APÓS ADICIONAR ---
