@@ -86,6 +86,12 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 }
 
 .brand-section { display: flex; align-items: center; gap: 10px; color: var(--primary); min-width: 0; }
+.brand-section .btn-report {
+    margin-left: 4px;
+    flex-shrink: 0;
+    padding: 7px 12px;
+    font-size: 0.85rem;
+}
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .brand-title {
     white-space: normal;
@@ -149,7 +155,6 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 .view-switcher { display: flex; align-items:center; background: #eef2f7; border:1px solid var(--nav-border); padding: 2px; border-radius: 8px; flex-shrink: 0; }
 #view-broker-select { order: 4; }
 .view-switcher { order: 1; }
-.controls-section .btn-report { order: 2; }
 #btn-admin-panel { order: 3; }
 .user-menu { order: 5; }
 .view-btn { border: none; background: transparent; padding: 5px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; }

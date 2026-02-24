@@ -37,8 +37,7 @@ export function resetReportsState() {
 }
 
 function injectReportButton() {
-    const controls = document.querySelector(".navbar .controls-section");
-    if (!controls || document.querySelector(".btn-report")) return;
+    if (document.querySelector(".btn-report")) return;
 
     const btn = document.createElement("button");
     btn.className = "btn-report";
@@ -46,14 +45,14 @@ function injectReportButton() {
     btn.innerHTML = `<i class="fas fa-chart-line"></i> Relatórios`;
     btn.onclick = openReportModal;
 
-    const viewSwitcher = controls.querySelector(".view-switcher");
-
-    if (viewSwitcher) {
-        viewSwitcher.insertAdjacentElement("afterend", btn);
+    const brandSection = document.querySelector(".navbar .brand-section");
+    if (brandSection) {
+        brandSection.appendChild(btn);
         return;
     }
 
-    controls.appendChild(btn);
+    const controls = document.querySelector(".navbar .controls-section");
+    if (controls) controls.prepend(btn);
 }
 
 function injectReportModal() {
