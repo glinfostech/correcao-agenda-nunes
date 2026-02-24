@@ -27,6 +27,8 @@ export async function saveAppointmentAction(formData) {
 
     const amICreator = isNew ? true : (oldAppt.createdBy === state.userProfile.email);
     const amIShared = !isNew && Array.isArray(oldAppt.sharedWith) && oldAppt.sharedWith.includes(state.userProfile.email);
+    const isCoreEditor = canManageAll || amICreator;
+    const isSharedLimitedEditor = !isNew && amIShared && !isCoreEditor;
 
     let isLocked = false;
     if (!isNew) {
@@ -38,7 +40,7 @@ export async function saveAppointmentAction(formData) {
         throw new Error("Ação Bloqueada: você não tem permissão para alterar este agendamento.");
     }
 
-    const canEditStatus = isNew ? true : ((amICreator || canManageAll) || (amIShared && !isLocked));
+    const canEditStatus = isNew ? true : (amICreator || canManageAll);
 
     // Regra: horário aberto => edição conforme permissão normal.
     // horário encerrado => apenas status (criador/admin/master).
@@ -91,6 +93,37 @@ export async function saveAppointmentAction(formData) {
         isEdited: !isNew,
         editedAt: !isNew ? nowIso : null
     };
+
+    if (isSharedLimitedEditor) {
+        appointmentData.properties = mergeOwnedItems(
+            oldAppt.properties || [],
+            formData.properties || [],
+            state.userProfile.email,
+            mapLegacyProperties(oldAppt)
+        );
+        appointmentData.clients = mergeOwnedItems(
+            oldAppt.clients || [],
+            formData.clients || [],
+            state.userProfile.email
+        );
+
+        appointmentData.brokerId = oldAppt.brokerId;
+        appointmentData.date = oldAppt.date;
+        appointmentData.startTime = oldAppt.startTime;
+        appointmentData.endTime = oldAppt.endTime;
+        appointmentData.isEvent = oldAppt.isEvent;
+        appointmentData.eventComment = oldAppt.eventComment || "";
+        appointmentData.status = oldAppt.status || "agendada";
+        appointmentData.statusObservation = oldAppt.statusObservation || "";
+        appointmentData.isRented = Boolean(oldAppt.isRented);
+        appointmentData.reference = oldAppt.reference || "";
+        appointmentData.propertyAddress = oldAppt.propertyAddress || "";
+        appointmentData.sharedWith = oldAppt.sharedWith || [];
+        appointmentData.linkedConsultantEmail = oldAppt.linkedConsultantEmail || oldAppt.createdBy || "";
+        appointmentData.linkedConsultantName = oldAppt.linkedConsultantName || oldAppt.createdByName || "";
+        appointmentData.createdBy = oldAppt.createdBy;
+        appointmentData.createdByName = oldAppt.createdByName;
+    }
 
     if (!isNew && isLocked) {
         appointmentData.brokerId = oldAppt.brokerId;
@@ -191,6 +224,70 @@ export async function saveAppointmentAction(formData) {
         console.error("Erro ao salvar:", error);
         throw new Error("Falha ao se comunicar com o banco de dados.");
     }
+}
+
+function mapLegacyProperties(appt) {
+    if (Array.isArray(appt.properties) && appt.properties.length > 0) return [];
+    const hasLegacy = (appt.reference || "").trim() || (appt.propertyAddress || "").trim();
+    if (!hasLegacy) return [];
+    return [{
+        reference: appt.reference || "",
+        propertyAddress: appt.propertyAddress || "",
+        addedBy: appt.createdBy || "",
+        addedByName: appt.createdByName || "",
+        addedAt: appt.createdAt || "",
+        itemId: "legacy-property-0"
+    }];
+}
+
+function mergeOwnedItems(originalItems, submittedItems, currentUserEmail, fallbackOriginalItems = []) {
+    const normalizeList = (list) => {
+        return (Array.isArray(list) ? list : []).map(item => ({
+            ...item,
+            itemId: item.itemId || `item-${Math.random().toString(36).slice(2, 10)}`,
+            addedBy: item.addedBy || ""
+        }));
+    };
+
+    const baseOriginal = normalizeList((originalItems && originalItems.length > 0) ? originalItems : fallbackOriginalItems);
+    const incoming = normalizeList(submittedItems);
+    const incomingById = new Map(incoming.map(item => [item.itemId, item]));
+    const protectedIds = new Set(
+        baseOriginal
+            .filter(item => item.addedBy !== currentUserEmail)
+            .map(item => item.itemId)
+    );
+
+    const merged = [];
+
+    baseOriginal.forEach(originalItem => {
+        if (originalItem.addedBy !== currentUserEmail) {
+            merged.push(originalItem);
+            return;
+        }
+        const updatedOwn = incomingById.get(originalItem.itemId);
+        if (updatedOwn) {
+            merged.push({
+                ...updatedOwn,
+                addedBy: currentUserEmail,
+                addedByName: updatedOwn.addedByName || originalItem.addedByName || "",
+                addedAt: updatedOwn.addedAt || originalItem.addedAt || ""
+            });
+            incomingById.delete(originalItem.itemId);
+        }
+    });
+
+    incomingById.forEach(newItem => {
+        if (protectedIds.has(newItem.itemId)) return;
+        merged.push({
+            ...newItem,
+            addedBy: currentUserEmail,
+            addedByName: newItem.addedByName || state.userProfile.name || "",
+            addedAt: newItem.addedAt || new Date().toLocaleString("pt-BR")
+        });
+    });
+
+    return merged;
 }
 
 // --- AÇÃO: DELETAR AGENDAMENTO ---
