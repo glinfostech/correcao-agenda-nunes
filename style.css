@@ -94,9 +94,9 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 }
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .brand-title {
-    white-space: normal;
+    white-space: nowrap;
     line-height: 1.1;
-    font-size: clamp(1.2rem, 1.5vw, 1.7rem);
+    font-size: clamp(1.05rem, 1.2vw, 1.35rem);
     font-weight: 800;
 }
 .brand-subtitle { display: none; }
@@ -781,7 +781,7 @@ body.theme-dark .form-group label {
 @media (max-width: 680px) {
     .navbar {padding: 8px; gap: 8px; grid-template-columns: 1fr; grid-template-areas: "brand" "search" "date" "controls"; align-items: stretch; }
     .brand-section { display: flex; }
-    .brand-title { font-size: 1.55rem; }
+    .brand-title { font-size: 1.15rem; white-space: nowrap; }
     .date-nav { width: 100%; justify-content: space-between; }
     .controls-section { gap: 8px; justify-content: flex-start; width: 100%; padding-left: 0; border-left: none; }
     #view-broker-select { width: 100% !important; }
@@ -807,7 +807,7 @@ body.theme-dark .form-group label {
 @media (max-width: 420px) {
     .navbar { padding: 8px; }
     .brand-section > i { font-size: 1.1rem !important; flex-shrink: 0; }
-    .brand-title { font-size: 1.25rem; }
+    .brand-title { font-size: 1.05rem; white-space: nowrap; }
     .search-input { font-size: 0.85rem; }
     .modal { padding: 10px; }
     .btn { padding: 8px 10px; }
