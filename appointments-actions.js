@@ -10,6 +10,29 @@ function normalizeRole(role) {
     return String(role || "").trim().toLowerCase();
 }
 
+function normalizeOwnerEmail(value, fallback = "") {
+    return String(value || fallback || "").trim().toLowerCase();
+}
+
+function protectRowsByOwnership(oldRows, incomingRows, userEmail, canManageAll) {
+    if (canManageAll) return incomingRows;
+
+    const myEmail = normalizeOwnerEmail(userEmail);
+    const oldList = Array.isArray(oldRows) ? oldRows : [];
+    const incomingList = Array.isArray(incomingRows) ? incomingRows : [];
+    const editableIncomingRows = incomingList.filter((row) => {
+        const owner = normalizeOwnerEmail(row?.addedBy, myEmail);
+        return owner === myEmail;
+    });
+
+    const protectedRows = oldList.filter((row) => {
+        const owner = normalizeOwnerEmail(row?.addedBy);
+        return owner && owner !== myEmail;
+    });
+
+    return [...editableIncomingRows, ...protectedRows];
+}
+
 // --- AÇÃO: SALVAR AGENDAMENTO ---
 export async function saveAppointmentAction(formData) {
     const id = formData.id;
@@ -108,6 +131,19 @@ export async function saveAppointmentAction(formData) {
         appointmentData.linkedConsultantName = oldAppt.linkedConsultantName || oldAppt.createdByName || "";
         appointmentData.createdBy = oldAppt.createdBy;
         appointmentData.createdByName = oldAppt.createdByName;
+    } else if (!isNew && !canManageAll) {
+        appointmentData.clients = protectRowsByOwnership(
+            oldAppt.clients,
+            appointmentData.clients,
+            state.userProfile.email,
+            canManageAll
+        );
+        appointmentData.properties = protectRowsByOwnership(
+            oldAppt.properties,
+            appointmentData.properties,
+            state.userProfile.email,
+            canManageAll
+        );
     }
 
     if (isNew) {
