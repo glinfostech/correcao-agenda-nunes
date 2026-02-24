@@ -102,6 +102,40 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     let btnAddClient = document.getElementById("btn-add-client"); 
     let btnAddProperty = document.getElementById("btn-add-property");
 
+    const getCurrentClientsForWhatsapp = () => {
+        const rows = document.querySelectorAll(".client-item-row");
+        if (!rows.length) return getClientList(appt);
+
+        return Array.from(rows).map((row) => ({
+            name: row.querySelector(".client-name-input")?.value?.trim() || "Cliente",
+            phone: row.querySelector(".client-phone-input")?.value?.trim() || ""
+        }));
+    };
+
+    const renderWhatsappButton = () => {
+        if (!appt || !whatsContainer) return;
+        whatsContainer.innerHTML = "";
+
+        const brokerNameForWhats = BROKERS.find((b) => b.id === appt.brokerId)?.name || "Desconhecido";
+        whatsContainer.appendChild(
+            createWhatsappButton(appt, brokerNameForWhats, getCurrentClientsForWhatsapp)
+        );
+
+        const phonesPreview = document.createElement("div");
+        phonesPreview.className = "whatsapp-phones-preview";
+        const clientsWithPhone = getCurrentClientsForWhatsapp().filter((c) => String(c?.phone || "").trim());
+
+        if (clientsWithPhone.length === 0) {
+            phonesPreview.innerText = "Sem telefones cadastrados.";
+        } else {
+            phonesPreview.innerText = clientsWithPhone
+                .map((c) => `${String(c.name || "Cliente").trim() || "Cliente"}: ${String(c.phone || "").trim()}`)
+                .join(" | ");
+        }
+
+        whatsContainer.appendChild(phonesPreview);
+    };
+
     const propertiesContainer = document.getElementById("properties-container");
     const inpDate = document.getElementById("form-date");
     const inpEventComment = document.getElementById("form-event-comment");
@@ -239,12 +273,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         const ownerSelect = document.getElementById("form-owner-select");
         if(ownerSelect) ownerSelect.disabled = disableCore;
 
-        // --- RECORRÊNCIA (Apenas para novos agendamentos feitos por Admin) ---
-        if (canManageAll && !appt) {
-            recurrenceSection.classList.remove("hidden");
-        } else {
-            recurrenceSection.classList.add("hidden");
-        }
+        // --- RECORRÊNCIA (Admin/Master): exibe também ao converter visita em Evento/Aviso ---
+        const shouldShowRecurrence = canManageAll && isEvt;
+        recurrenceSection.classList.toggle("hidden", !shouldShowRecurrence);
 
         if (isEvt) {
             propertiesContainer.classList.add("hidden");
@@ -269,25 +300,8 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
             setupShareSection(shareCheckboxes, shareSection, isCoreEditor, isLocked, false, appt);
             shareSection.classList.remove("hidden");
 
-            // --- LÓGICA PARA FAZER O BOTÃO WHATSAPP VOLTAR ---
-            if (appt && canInteractGeneral && whatsContainer) {
-                if (whatsContainer.innerHTML === "") {
-                    const clientList = getClientList(appt);
-                    let targetClient = null;
-                    
-                    if (isCoreEditor) {
-                        if (clientList.length > 0) targetClient = clientList[0];
-                    } else if (amIShared) {
-                        targetClient = clientList.find(c => c.addedBy === state.userProfile.email);
-                    }
-
-                    const brokerNameForWhats = BROKERS.find((b) => b.id === appt.brokerId)?.name || "Desconhecido";
-                    if (targetClient && targetClient.phone) {
-                        whatsContainer.appendChild(
-                            createWhatsappButton(targetClient.name, targetClient.phone, appt, brokerNameForWhats)
-                        );
-                    }
-                }
+            if (appt && canInteractGeneral) {
+                renderWhatsappButton();
             }
             
             enforceClientRowPermissions(isLocked, isCoreEditor, false);
@@ -299,13 +313,10 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     chkIsEvent.onclick = updateFormState;
     updateFormState(); // Init
 
-    // --- RECORRÊNCIA (ADMIN) ---
+    // --- RECORRÊNCIA (limpa campos para novo agendamento) ---
     if (canManageAll && !appt) {
-        recurrenceSection.classList.remove("hidden");
         document.getElementById("recurrence-end-date").value = "";
         document.querySelectorAll("input[name='recurrence-day']").forEach(c => c.checked = false);
-    } else {
-        recurrenceSection.classList.add("hidden");
     }
 
     // --- BOTÕES DE AÇÃO VISUAL ---
@@ -322,6 +333,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
              e.preventDefault(); e.stopPropagation(); 
              const nowStr = new Date().toLocaleString("pt-BR");
              addClientRow("", "", state.userProfile.email, 0, true, state.userProfile.name, nowStr);
+             renderWhatsappButton();
         };
     }
 
@@ -368,17 +380,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         inpEnd.value = appt.endTime;
 
         if ((canInteractGeneral) && !isEvent) {
-            const clientList = getClientList(appt);
-            let targetClient = null;
-            if (isCoreEditor) {
-                 if (clientList.length > 0) targetClient = clientList[0];
-            } else if (amIShared) {
-                 targetClient = clientList.find(c => c.addedBy === state.userProfile.email);
-            }
-            const brokerNameForWhats = BROKERS.find((b) => b.id === appt.brokerId)?.name || "Desconhecido";
-            if (targetClient && targetClient.phone) whatsContainer.appendChild(
-                createWhatsappButton(targetClient.name, targetClient.phone, appt, brokerNameForWhats)
-            );
+            renderWhatsappButton();
         }
     } else {
         // NOVO AGENDAMENTO
@@ -393,7 +395,14 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         if(onDeleteCallback) onDeleteCallback(appt);
     };
     
-    setupClientObserver(enforceClientRowPermissions, isLocked, isCoreEditor, chkIsEvent);
+    setupClientObserver(enforceClientRowPermissions, isLocked, isCoreEditor, chkIsEvent, renderWhatsappButton);
+
+    const clientsContainer = document.getElementById("clients-container");
+    if (clientsContainer) {
+        clientsContainer.oninput = () => {
+            if (!chkIsEvent.checked && appt && canInteractGeneral) renderWhatsappButton();
+        };
+    }
 }
 
 // --- FUNÇÕES AUXILIARES DE UI ---
@@ -473,7 +482,7 @@ function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
     });
 }
 
-function setupClientObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
+function setupClientObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent, onRowsChanged = null) {
     const clientsContainer = document.getElementById("clients-container");
     if(clientsContainer) {
         if(clientsContainer._permissionObserver) {
@@ -481,6 +490,7 @@ function setupClientObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
         }
         const observer = new MutationObserver(() => {
             enforceFn(isLocked, isCoreEditor, chkIsEvent.checked);
+            if (typeof onRowsChanged === "function" && !chkIsEvent.checked) onRowsChanged();
         });
         observer.observe(clientsContainer, { childList: true, subtree: true });
         clientsContainer._permissionObserver = observer;
