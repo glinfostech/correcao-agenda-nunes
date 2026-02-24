@@ -290,7 +290,8 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
                 renderWhatsappButton();
             }
             
-            enforceClientRowPermissions(isLocked, isCoreEditor, false);
+            enforceClientRowPermissions(isLocked, canManageAll, false);
+            enforcePropertyRowPermissions(isLocked, canManageAll, false);
         }
     };
 
@@ -335,7 +336,15 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
              let rowsCount = document.querySelectorAll(".property-item-row").length;
              
              if (rowsCount < 4) {
-                 addPropertyRow("", "", rowsCount, canInteractGeneral && !chkIsEvent.checked);
+                 addPropertyRow(
+                    "",
+                    "",
+                    rowsCount,
+                    canInteractGeneral && !chkIsEvent.checked,
+                    state.userProfile.email,
+                    state.userProfile.name,
+                    new Date().toLocaleString("pt-BR")
+                 );
                  rowsCount++; // Atualiza a contagem após adicionar
              }
              
@@ -380,7 +389,8 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         if(onDeleteCallback) onDeleteCallback(appt);
     };
     
-    setupClientObserver(enforceClientRowPermissions, isLocked, isCoreEditor, chkIsEvent);
+    setupClientObserver(enforceClientRowPermissions, isLocked, canManageAll, chkIsEvent);
+    setupPropertyObserver(enforcePropertyRowPermissions, isLocked, canManageAll, chkIsEvent);
 }
 
 // --- FUNÇÕES AUXILIARES DE UI ---
@@ -432,17 +442,18 @@ function populateDateField(inpDate, dateStatic, btnChangeDate, appt, defaults) {
     inpDate.classList.remove("hidden");
 }
 
-function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
+function enforceClientRowPermissions(isLocked, canManageAll, isEvtMode) {
     const rows = document.querySelectorAll(".client-item-row");
     if(isEvtMode) return; 
 
     rows.forEach(row => {
         const addedByInput = row.querySelector(".client-added-by");
-        const rowOwner = addedByInput ? addedByInput.value : "";
-        const isMine = (rowOwner === state.userProfile.email);
+        const rowOwner = String(addedByInput ? addedByInput.value : "").trim().toLowerCase();
+        const myEmail = String(state.userProfile.email || "").trim().toLowerCase();
+        const isMine = (rowOwner === myEmail);
         
         // Clientes: Se está bloqueado, ninguém edita dados do cliente.
-        let canEditThisRow = (!isLocked) && (isCoreEditor || isMine);
+        let canEditThisRow = (!isLocked) && (canManageAll || isMine);
         
         const nameInp = row.querySelector(".client-name-input");
         const phoneInp = row.querySelector(".client-phone-input");
@@ -460,14 +471,14 @@ function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
     });
 }
 
-function setupClientObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
+function setupClientObserver(enforceFn, isLocked, canManageAll, chkIsEvent) {
     const clientsContainer = document.getElementById("clients-container");
     if(clientsContainer) {
         if(clientsContainer._permissionObserver) {
             clientsContainer._permissionObserver.disconnect();
         }
         const observer = new MutationObserver(() => {
-            enforceFn(isLocked, isCoreEditor, chkIsEvent.checked);
+            enforceFn(isLocked, canManageAll, chkIsEvent.checked);
         });
         observer.observe(clientsContainer, { childList: true, subtree: true });
         clientsContainer._permissionObserver = observer;
@@ -639,9 +650,20 @@ function getPropertiesFromUI() {
     rows.forEach((row) => {
         const refInput = row.querySelector(".property-reference-input");
         const addressInput = row.querySelector(".property-address-input");
+        const addedByInput = row.querySelector(".property-added-by");
+        const addedByNameInput = row.querySelector(".property-added-by-name");
+        const addedAtInput = row.querySelector(".property-added-at");
         const reference = refInput ? refInput.value.trim() : "";
         const propertyAddress = addressInput ? addressInput.value.trim() : "";
-        if (reference || propertyAddress) properties.push({ reference, propertyAddress });
+        if (reference || propertyAddress) {
+            properties.push({
+                reference,
+                propertyAddress,
+                addedBy: addedByInput ? addedByInput.value : state.userProfile.email,
+                addedByName: addedByNameInput ? addedByNameInput.value : (state.userProfile.name || ""),
+                addedAt: addedAtInput ? addedAtInput.value : new Date().toLocaleString("pt-BR")
+            });
+        }
     });
     return properties;
 }
@@ -658,7 +680,15 @@ function renderPropertiesInput(properties, editable) {
 
     const propList = (properties && properties.length > 0) ? properties : [{ reference: "", propertyAddress: "" }];
     propList.forEach((prop, idx) => {
-        addPropertyRow(prop.reference || "", prop.propertyAddress || "", idx, editable);
+        addPropertyRow(
+            prop.reference || "",
+            prop.propertyAddress || "",
+            idx,
+            editable,
+            prop.addedBy || state.userProfile.email,
+            prop.addedByName || state.userProfile.name || "",
+            prop.addedAt || ""
+        );
     });
 }
 
@@ -669,4 +699,44 @@ function togglePropertiesDisabled(disabled, disableRemove = false) {
     document.querySelectorAll(".remove-property-btn").forEach(btn => {
         btn.disabled = disabled || disableRemove;
     });
+}
+
+function enforcePropertyRowPermissions(isLocked, canManageAll, isEvtMode) {
+    const rows = document.querySelectorAll(".property-item-row");
+    if (isEvtMode) return;
+
+    rows.forEach((row) => {
+        const addedByInput = row.querySelector(".property-added-by");
+        const rowOwner = String(addedByInput ? addedByInput.value : "").trim().toLowerCase();
+        const myEmail = String(state.userProfile.email || "").trim().toLowerCase();
+        const isMine = rowOwner === myEmail;
+        const canEditThisRow = (!isLocked) && (canManageAll || isMine);
+
+        const refInp = row.querySelector(".property-reference-input");
+        const addrInp = row.querySelector(".property-address-input");
+        if (refInp) refInp.disabled = !canEditThisRow;
+        if (addrInp) addrInp.disabled = !canEditThisRow;
+
+        const btnWrap = row.querySelector(".remove-btn-container");
+        const btnDel = row.querySelector(".remove-property-btn");
+        if (btnDel) {
+            const showRemove = canEditThisRow && rows.length > 1;
+            btnDel.disabled = !showRemove;
+            if (btnWrap) btnWrap.style.display = showRemove ? "flex" : "none";
+        }
+    });
+}
+
+function setupPropertyObserver(enforceFn, isLocked, canManageAll, chkIsEvent) {
+    const propertiesContainer = document.getElementById("properties-container");
+    if (propertiesContainer) {
+        if (propertiesContainer._permissionObserver) {
+            propertiesContainer._permissionObserver.disconnect();
+        }
+        const observer = new MutationObserver(() => {
+            enforceFn(isLocked, canManageAll, chkIsEvent.checked);
+        });
+        observer.observe(propertiesContainer, { childList: true, subtree: true });
+        propertiesContainer._permissionObserver = observer;
+    }
 }

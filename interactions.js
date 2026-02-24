@@ -410,13 +410,40 @@ export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, 
     container.appendChild(row);
     refreshClientRemoveButtons();
 }
-export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, rowEditable = true) {
+export function addPropertyRow(
+    referenceVal = "",
+    addressVal = "",
+    index = 0,
+    rowEditable = true,
+    addedByVal = "",
+    addedByNameVal = "",
+    addedAtVal = ""
+) {
     const container = document.getElementById("properties-container");
     const row = document.createElement("div");
     row.className = "property-item-row";
+
+    const hiddenAddedBy = document.createElement("input");
+    hiddenAddedBy.type = "hidden";
+    hiddenAddedBy.className = "property-added-by";
+    hiddenAddedBy.value = addedByVal || state.userProfile.email;
+    row.appendChild(hiddenAddedBy);
+
+    const hiddenAddedByName = document.createElement("input");
+    hiddenAddedByName.type = "hidden";
+    hiddenAddedByName.className = "property-added-by-name";
+    hiddenAddedByName.value = addedByNameVal || state.userProfile.name || "";
+    row.appendChild(hiddenAddedByName);
+
+    const hiddenAddedAt = document.createElement("input");
+    hiddenAddedAt.type = "hidden";
+    hiddenAddedAt.className = "property-added-at";
+    hiddenAddedAt.value = addedAtVal || new Date().toLocaleString("pt-BR");
+    row.appendChild(hiddenAddedAt);
     
     // Configura o Flexbox da linha
     row.style.display = "flex";
+    row.style.flexWrap = "wrap";
     row.style.gap = "10px";
     row.style.marginBottom = "10px";
     
@@ -507,6 +534,20 @@ export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, ro
     row.appendChild(divRef);
     row.appendChild(divAddress);
     row.appendChild(btnContainer);
+
+    if (hiddenAddedByName.value && hiddenAddedAt.value) {
+        const infoDiv = document.createElement("div");
+        infoDiv.style.flex = "1 0 100%";
+        infoDiv.style.fontSize = "0.7rem";
+        infoDiv.style.color = "#94a3b8";
+        infoDiv.style.marginTop = "-4px";
+        infoDiv.style.fontStyle = "italic";
+        infoDiv.style.lineHeight = "1.2";
+        infoDiv.style.paddingLeft = "0";
+        infoDiv.innerText = `Cadastrado por: ${hiddenAddedByName.value} em ${hiddenAddedAt.value}`;
+        row.appendChild(infoDiv);
+    }
+
     container.appendChild(row);
 
     // --- ATUALIZAÇÃO IMEDIATA DO LIXO APÓS ADICIONAR ---
