@@ -301,11 +301,10 @@ function updateUserUI(profile) {
         roleDisplay.innerText = cargoFinal;
     }
     
-    // 4. Mostra/Esconde o botão de Admin
+    // 4. Mostra/Esconde o botão de cadastro de usuários (apenas Master)
     const adminPanelBtn = document.getElementById("btn-admin-panel"); 
     if (adminPanelBtn) {
-        // Assume que a função isAdminRole já existe no seu arquivo
-        if (isAdminRole(profile.role)) {
+        if (normalizeRole(profile.role) === "master") {
             adminPanelBtn.classList.remove('hidden');
             adminPanelBtn.onclick = () => showAdminPanelView();
             window.openAdminPanel = showAdminPanelView;
