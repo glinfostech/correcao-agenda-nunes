@@ -171,18 +171,20 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // --- PERMISSÕES (LÓGICA AJUSTADA) ---
     const amICreator = appt ? appt.createdBy === state.userProfile.email : true; 
-    const isAdmin = state.userProfile.role === "admin";
-    const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com");
+    const userRole = String(state.userProfile.role || "").trim().toLowerCase();
+    const isAdmin = userRole === "admin";
+    const isMaster = userRole === "master";
+    const canManageAll = isAdmin || isMaster;
     const amIShared = appt && appt.sharedWith && appt.sharedWith.includes(state.userProfile.email);
     
-    // CoreEditor: Admin ou Criador
-    const isCoreEditor = (isAdmin || amICreator);
+    // CoreEditor: Admin/Master ou Criador
+    const isCoreEditor = (canManageAll || amICreator);
     // CanSaveAny: Pode salvar se for Editor, Criador ou Compartilhado
     const canSaveAny = (isCoreEditor || amIShared);
     
     // Lógica de Trava Temporal
     let isLocked = false;
-    if (appt && isTimeLocked(appt.date, appt.startTime) && !isSuperAdmin) {
+    if (appt && isTimeLocked(appt.date, appt.startTime)) {
         isLocked = true;
         lockWarning.style.display = "block";
         lockWarning.innerText = getLockMessage(appt.date);
@@ -192,7 +194,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     
     // 1. Quem pode editar o STATUS?
     // Regra: Criador/Admin pode SEMPRE. Compartilhados só se NÃO estiver bloqueado.
-    const canEditStatus = (amICreator || isAdmin) || (canSaveAny && !isLocked);
+    const canEditStatus = (amICreator || canManageAll) || (amIShared && !isLocked);
 
     // 2. Quem pode interagir com o GERAL (Campos principais)?
     // Regra original: Ninguém se estiver bloqueado.
@@ -200,7 +202,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // 3. O botão SALVAR deve aparecer?
     // Aparece se puder interagir no geral OU se puder editar Status (mesmo bloqueado)
-    const showSaveButton = canInteractGeneral || (isLocked && (amICreator || isAdmin));
+    const showSaveButton = canInteractGeneral || canEditStatus;
     
     // 4. Pode deletar?
     const createdAtMs = appt?.createdAt ? new Date(appt.createdAt).getTime() : 0;
@@ -238,7 +240,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         if(ownerSelect) ownerSelect.disabled = disableCore;
 
         // --- RECORRÊNCIA (Apenas para novos agendamentos feitos por Admin) ---
-        if (isAdmin && !appt) {
+        if (canManageAll && !appt) {
             recurrenceSection.classList.remove("hidden");
         } else {
             recurrenceSection.classList.add("hidden");
@@ -298,7 +300,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     updateFormState(); // Init
 
     // --- RECORRÊNCIA (ADMIN) ---
-    if (isAdmin && !appt) {
+    if (canManageAll && !appt) {
         recurrenceSection.classList.remove("hidden");
         document.getElementById("recurrence-end-date").value = "";
         document.querySelectorAll("input[name='recurrence-day']").forEach(c => c.checked = false);
@@ -350,9 +352,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     // --- PREENCHIMENTO DE DADOS ESPECÍFICOS ---
     if (appt) {
         document.getElementById("modal-title").innerText = isEvent ? "Evento/Aviso" : "Detalhes da Visita";
-        renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin);
+        renderHeaderInfo(headerInfo, appt, canManageAll);
         updateFormState();
-        renderHistoryLogs(appt, isAdmin);
+        renderHistoryLogs(appt, canManageAll);
 
         if (isEvent) {
             inpEventComment.value = appt.eventComment || "";
@@ -360,7 +362,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         } else {
             renderPropertiesInput(getPropertyList(appt), canInteractGeneral && !isEvent);
             // Clientes só editáveis se não bloqueado geral
-            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, isAdmin, appt);
+            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, canManageAll, appt);
         }
         inpStart.value = appt.startTime;
         inpEnd.value = appt.endTime;
@@ -528,16 +530,16 @@ function setupNewAppointmentUI(defaults, inpBroker, brokerStatic, btnChangeBroke
     updateFormState();
 }
 
-function renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin) {
+function renderHeaderInfo(headerInfo, appt, canManageAll) {
     if(!headerInfo) return;
     const creationDate = appt.createdAt ? new Date(appt.createdAt).toLocaleString("pt-BR") : "N/A";
     let originalCreatorName = appt.createdByName;
     if (appt.history && appt.history.length > 0) originalCreatorName = appt.history[0].user; 
-    let idBadgeHtml = (isAdmin || isSuperAdmin) ? `<div class="id-badge">#${appt.id.slice(0, 5).toUpperCase()}</div>` : "";
+    let idBadgeHtml = canManageAll ? `<div class="id-badge">#${appt.id.slice(0, 5).toUpperCase()}</div>` : "";
     let recurrenceIcon = appt.groupId ? `<span class="recurrence-icon"><i class="fas fa-sync-alt"></i></span>` : "";
 
     let ownerHtml = "";
-    if (isAdmin) {
+    if (canManageAll) {
         let options = "";
         const currentOwnerEmail = appt.createdBy;
         const sortedConsultants = [...state.availableConsultants].sort((a,b) => a.name.localeCompare(b.name));
@@ -553,8 +555,8 @@ function renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin) {
     headerInfo.innerHTML = `<div class="meta-header-container"><div class="meta-left-group">${ownerHtml}<span class="meta-info-text">Criado por <strong>${originalCreatorName}</strong> em ${creationDate} ${recurrenceIcon}</span></div>${idBadgeHtml}</div>`;
 }
 
-function renderHistoryLogs(appt, isAdmin) {
-    if (isAdmin && appt && appt.history && appt.history.length > 0) {
+function renderHistoryLogs(appt, canManageAll) {
+    if (canManageAll && appt && appt.history && appt.history.length > 0) {
         let historyContainer = document.getElementById("history-logs-container");
         if (!historyContainer) {
             historyContainer = document.createElement("div");
