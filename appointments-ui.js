@@ -25,13 +25,15 @@ export function getFormDataFromUI() {
         const addedByInput = row.querySelector(".client-added-by");
         const addedByNameInput = row.querySelector(".client-added-by-name");
         const addedAtInput = row.querySelector(".client-added-at");
+        const itemIdInput = row.querySelector(".client-item-id");
         if(nameInput && nameInput.value.trim()) {
             clientsData.push({ 
                 name: nameInput.value.trim(), 
                 phone: phoneInput.value.trim(), 
                 addedBy: addedByInput.value, 
                 addedByName: addedByNameInput ? addedByNameInput.value : "", 
-                addedAt: addedAtInput ? addedAtInput.value : ""
+                addedAt: addedAtInput ? addedAtInput.value : "",
+                itemId: itemIdInput ? itemIdInput.value : ""
             });
         }
     });
@@ -291,6 +293,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
             }
             
             enforceClientRowPermissions(isLocked, isCoreEditor, false);
+            enforcePropertyRowPermissions(isLocked, isCoreEditor, false);
         }
     };
 
@@ -335,7 +338,15 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
              let rowsCount = document.querySelectorAll(".property-item-row").length;
              
              if (rowsCount < 4) {
-                 addPropertyRow("", "", rowsCount, canInteractGeneral && !chkIsEvent.checked);
+                 addPropertyRow(
+                    "",
+                    "",
+                    rowsCount,
+                    canInteractGeneral && !chkIsEvent.checked,
+                    state.userProfile.email,
+                    state.userProfile.name,
+                    new Date().toLocaleString("pt-BR")
+                 );
                  rowsCount++; // Atualiza a contagem após adicionar
              }
              
@@ -381,6 +392,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     };
     
     setupClientObserver(enforceClientRowPermissions, isLocked, isCoreEditor, chkIsEvent);
+    setupPropertyObserver(enforcePropertyRowPermissions, isLocked, isCoreEditor, chkIsEvent);
 }
 
 // --- FUNÇÕES AUXILIARES DE UI ---
@@ -460,6 +472,31 @@ function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
     });
 }
 
+function enforcePropertyRowPermissions(isLocked, isCoreEditor, isEvtMode) {
+    const rows = document.querySelectorAll(".property-item-row");
+    if (isEvtMode) return;
+
+    rows.forEach(row => {
+        const addedByInput = row.querySelector(".property-added-by");
+        const rowOwner = addedByInput ? addedByInput.value : "";
+        const isMine = (rowOwner === state.userProfile.email);
+        const canEditThisRow = (!isLocked) && (isCoreEditor || isMine);
+
+        const refInp = row.querySelector(".property-reference-input");
+        const addrInp = row.querySelector(".property-address-input");
+        if (refInp) refInp.disabled = !canEditThisRow;
+        if (addrInp) addrInp.disabled = !canEditThisRow;
+
+        const btnWrap = row.querySelector(".remove-btn-container");
+        const btnDel = row.querySelector(".remove-property-btn");
+        if (btnDel) {
+            const showRemove = canEditThisRow && rows.length > 1;
+            btnDel.disabled = !showRemove;
+            if (btnWrap) btnWrap.style.display = showRemove ? "flex" : "none";
+        }
+    });
+}
+
 function setupClientObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
     const clientsContainer = document.getElementById("clients-container");
     if(clientsContainer) {
@@ -471,6 +508,20 @@ function setupClientObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
         });
         observer.observe(clientsContainer, { childList: true, subtree: true });
         clientsContainer._permissionObserver = observer;
+    }
+}
+
+function setupPropertyObserver(enforceFn, isLocked, isCoreEditor, chkIsEvent) {
+    const propertiesContainer = document.getElementById("properties-container");
+    if(propertiesContainer) {
+        if(propertiesContainer._permissionObserver) {
+            propertiesContainer._permissionObserver.disconnect();
+        }
+        const observer = new MutationObserver(() => {
+            enforceFn(isLocked, isCoreEditor, chkIsEvent.checked);
+        });
+        observer.observe(propertiesContainer, { childList: true, subtree: true });
+        propertiesContainer._permissionObserver = observer;
     }
 }
 
@@ -628,7 +679,7 @@ export function renderClientsInput(clients, formEditable, isCreator, isAdmin, ap
         addClientRow("", "", state.userProfile.email, 0, formEditable, state.userProfile.name, nowStr);
     } else {
         clients.forEach((c, index) => {
-            addClientRow(c.name || "", c.phone || "", c.addedBy, index, formEditable, c.addedByName || "", c.addedAt || "");
+            addClientRow(c.name || "", c.phone || "", c.addedBy, index, formEditable, c.addedByName || "", c.addedAt || "", c.itemId || "");
         });
     }
 }
@@ -639,9 +690,22 @@ function getPropertiesFromUI() {
     rows.forEach((row) => {
         const refInput = row.querySelector(".property-reference-input");
         const addressInput = row.querySelector(".property-address-input");
+        const addedByInput = row.querySelector(".property-added-by");
+        const addedByNameInput = row.querySelector(".property-added-by-name");
+        const addedAtInput = row.querySelector(".property-added-at");
+        const itemIdInput = row.querySelector(".property-item-id");
         const reference = refInput ? refInput.value.trim() : "";
         const propertyAddress = addressInput ? addressInput.value.trim() : "";
-        if (reference || propertyAddress) properties.push({ reference, propertyAddress });
+        if (reference || propertyAddress) {
+            properties.push({
+                reference,
+                propertyAddress,
+                addedBy: addedByInput ? addedByInput.value : state.userProfile.email,
+                addedByName: addedByNameInput ? addedByNameInput.value : (state.userProfile.name || ""),
+                addedAt: addedAtInput ? addedAtInput.value : new Date().toLocaleString("pt-BR"),
+                itemId: itemIdInput ? itemIdInput.value : `property-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+            });
+        }
     });
     return properties;
 }
@@ -658,7 +722,16 @@ function renderPropertiesInput(properties, editable) {
 
     const propList = (properties && properties.length > 0) ? properties : [{ reference: "", propertyAddress: "" }];
     propList.forEach((prop, idx) => {
-        addPropertyRow(prop.reference || "", prop.propertyAddress || "", idx, editable);
+        addPropertyRow(
+            prop.reference || "",
+            prop.propertyAddress || "",
+            idx,
+            editable,
+            prop.addedBy || state.userProfile.email,
+            prop.addedByName || state.userProfile.name || "",
+            prop.addedAt || "",
+            prop.itemId || ""
+        );
     });
 }
 

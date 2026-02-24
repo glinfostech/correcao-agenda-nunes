@@ -297,7 +297,7 @@ function refreshClientRemoveButtons() {
     });
 }
 
-export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, addedByNameVal = "", addedAtVal = "") {
+export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, addedByNameVal = "", addedAtVal = "", itemIdVal = "") {
     const container = document.getElementById("clients-container");
     const row = document.createElement("div");
     row.className = "client-item-row";
@@ -327,6 +327,12 @@ export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, 
     hiddenAddedAt.className = "client-added-at";
     hiddenAddedAt.value = addedAtVal || ""; 
     row.appendChild(hiddenAddedAt);
+
+    const hiddenItemId = document.createElement("input");
+    hiddenItemId.type = "hidden";
+    hiddenItemId.className = "client-item-id";
+    hiddenItemId.value = itemIdVal || `client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    row.appendChild(hiddenItemId);
     
     // --- COLUNA NOME ---
     const divName = document.createElement("div");
@@ -410,7 +416,7 @@ export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, 
     container.appendChild(row);
     refreshClientRemoveButtons();
 }
-export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, rowEditable = true) {
+export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, rowEditable = true, addedByVal = "", addedByNameVal = "", addedAtVal = "", itemIdVal = "") {
     const container = document.getElementById("properties-container");
     const row = document.createElement("div");
     row.className = "property-item-row";
@@ -419,6 +425,30 @@ export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, ro
     row.style.display = "flex";
     row.style.gap = "10px";
     row.style.marginBottom = "10px";
+
+    const hiddenAddedBy = document.createElement("input");
+    hiddenAddedBy.type = "hidden";
+    hiddenAddedBy.className = "property-added-by";
+    hiddenAddedBy.value = addedByVal || state.userProfile.email;
+    row.appendChild(hiddenAddedBy);
+
+    const hiddenAddedByName = document.createElement("input");
+    hiddenAddedByName.type = "hidden";
+    hiddenAddedByName.className = "property-added-by-name";
+    hiddenAddedByName.value = addedByNameVal || state.userProfile.name || "";
+    row.appendChild(hiddenAddedByName);
+
+    const hiddenAddedAt = document.createElement("input");
+    hiddenAddedAt.type = "hidden";
+    hiddenAddedAt.className = "property-added-at";
+    hiddenAddedAt.value = addedAtVal || new Date().toLocaleString("pt-BR");
+    row.appendChild(hiddenAddedAt);
+
+    const hiddenItemId = document.createElement("input");
+    hiddenItemId.type = "hidden";
+    hiddenItemId.className = "property-item-id";
+    hiddenItemId.value = itemIdVal || `property-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    row.appendChild(hiddenItemId);
     
     // --- CAMPO REFERÊNCIA ---
     const divRef = document.createElement("div");
