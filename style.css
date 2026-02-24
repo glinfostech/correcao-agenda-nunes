@@ -61,11 +61,11 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    4. NAVBAR E NAVEGAÇÃO
    ========================================================================== */
-.navbar { background: #ffffff; border: 1px solid #334155; border-radius: 12px; margin: 6px 8px 0; padding: 0.75rem 1rem; display: grid; grid-template-columns: minmax(300px, 380px) minmax(300px, 1fr) minmax(280px, 420px) auto; align-items: center; gap: 12px; z-index: 500; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+.navbar { background: #ffffff; border: 1px solid #334155; border-radius: 12px; margin: 6px 8px 0; padding: 0.5rem 0.9rem; min-height: 64px; display: grid; grid-template-columns: minmax(290px, 360px) minmax(280px, 1fr) minmax(300px, 390px) auto; align-items: center; gap: 10px; z-index: 500; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
 .brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; min-width: 0; }
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.brand-title { white-space: nowrap; line-height: 1; font-size: clamp(1.55rem, 2vw, 2.6rem); font-weight: 800; overflow: visible; text-overflow: clip; }
-.controls-section { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; min-width: 0; }
+.brand-title { white-space: nowrap; line-height: 1; font-size: clamp(1.5rem, 2vw, 3rem); font-weight: 800; overflow: visible; text-overflow: clip; }
+.controls-section { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; }
 .controls-section > * { max-width: 100%; }
 
 .date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; min-width: 0; justify-content: space-between; }
@@ -78,9 +78,9 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 .view-btn.active { background: white; color: var(--primary); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
 .user-menu { display: flex; align-items: center; gap: 10px; border-left: 1px solid var(--border); padding-left: 12px; flex-shrink: 0; }
-.user-info { text-align: right; line-height: 1.2; display: none; }
+.user-info { text-align: right; line-height: 1.2; display: block; }
 .user-avatar { width: 36px; height: 36px; background: #e0e7ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
-.logout-btn { color: #ef4444; background: none; border: none; font-size: 0.85rem; cursor: pointer; text-decoration: underline; }
+.logout-btn { color: #ef4444; background: none; border: none; font-size: 0.95rem; cursor: pointer; padding: 0; text-decoration: none; }
 
 /* ==========================================================================
    5. BUSCA (SEARCH)
@@ -669,7 +669,7 @@ body.theme-dark .form-group label {
 
 
 @media (max-width: 1800px) {
-    .navbar { grid-template-columns: minmax(250px, 320px) minmax(260px, 1fr); align-items: stretch; }
+    .navbar { grid-template-columns: minmax(240px, 300px) minmax(260px, 1fr); align-items: stretch; }
     .brand-section { grid-column: 1; }
     .search-container { grid-column: 2; max-width: 620px; }
     .date-nav { grid-column: 1; }
