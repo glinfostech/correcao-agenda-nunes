@@ -334,7 +334,7 @@ function renderReportTable(startDate, endDate) {
                         <th>Corretor</th>
                         <th>Visitas Totais</th>
                         <th>Canceladas</th>
-                        <th>Visitas Efetivas</th>
+                        <th>Visitas Realizadas</th>
                         <th>Alugados</th>
                         <th class="th-right">Taxa Conversão</th>
                         <th class="th-right">Taxa Efetiva</th>

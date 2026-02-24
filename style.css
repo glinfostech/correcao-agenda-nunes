@@ -597,30 +597,58 @@ body.theme-dark #dialog-text {
 }
 .theme-toggle-btn i { font-size: 1rem; }
 
-/* Relatório com paleta do site */
-.ranking-dark-wrapper,
-.ranking-table-container,
-.ranking-dark-table {
-    background: var(--bg-card) !important;
-    color: var(--text-main) !important;
-    border-color: var(--border) !important;
+/* Relatório no visual da referência (tema claro) */
+body:not(.theme-dark) .ranking-dark-wrapper {
+    background: #f8fafc !important;
+    color: #1e293b !important;
+    border: 1px solid #dbe3ee !important;
+    border-radius: 10px;
 }
 
-.ranking-title,
-
-.ranking-dark-table th,
-.ranking-dark-table tfoot .total-geral-row td {
-    background: var(--bg-elevated) !important;
-    color: var(--text-main) !important;
-    border-color: var(--border) !important;
+body:not(.theme-dark) .ranking-title {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #dbe3ee !important;
 }
 
-.ranking-subtitle,
-.ranking-metric-item,
-.rank-empty {
-    color: var(--text-muted) !important;
+body:not(.theme-dark) .ranking-subtitle,
+body:not(.theme-dark) .rank-empty {
+    color: #334155 !important;
 }
 
+body:not(.theme-dark) .ranking-table-container {
+    background: #ffffff !important;
+    max-height: calc(90vh - 290px);
+    overflow: auto;
+}
+
+body:not(.theme-dark) .ranking-dark-table {
+    background: #ffffff !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table thead tr,
+body:not(.theme-dark) .ranking-dark-table tbody tr,
+body:not(.theme-dark) .ranking-dark-table tfoot tr {
+    background: #ffffff !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table th {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #dbe3ee !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table td {
+    color: #1e293b !important;
+    border-color: #dbe3ee !important;
+}
+
+body:not(.theme-dark) .ranking-dark-table tfoot .total-geral-row td {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-top: 1px solid #dbe3ee !important;
+    box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.08);
+}
 
 body.theme-dark #admin-crud-screen {
     background-color: #0b1220;
@@ -707,48 +735,6 @@ body.theme-dark .form-group label {
     .btn { padding: 8px 10px; }
 }
 
-
-
-/* Mantém o relatório de ranking com visual escuro em qualquer tema */
-.ranking-dark-wrapper {
-    background: #0f0f0f !important;
-    border: 1px solid #2b2b2b !important;
-}
-
-.ranking-title {
-    background: linear-gradient(180deg, #1a1a1a 0%, #131313 100%) !important;
-    color: #f3f4f6 !important;
-    border-bottom: 1px solid #2b2b2b !important;
-}
-
-.ranking-subtitle,
-.rank-empty {
-    color: #9ca3af !important;
-}
-
-.ranking-dark-table,
-.ranking-dark-table tbody tr,
-.ranking-dark-table thead tr,
-.ranking-dark-table tfoot tr {
-    background: #121212 !important;
-}
-
-.ranking-dark-table th {
-    background: #1b1b1b !important;
-    color: #d1d5db !important;
-    border-color: #242424 !important;
-}
-
-.ranking-dark-table td {
-    color: #e5e7eb !important;
-    border-color: #1f1f1f !important;
-}
-
-.ranking-dark-table tfoot .total-geral-row td {
-    background: #161616 !important;
-    color: #f3f4f6 !important;
-    border-top: 1px solid #333 !important;
-}
 
 
 /* Bloco de data/hora/status no modal de criação/edição sempre branco para leitura */
