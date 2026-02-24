@@ -40,7 +40,7 @@ export async function saveAppointmentAction(formData) {
         throw new Error("Ação Bloqueada: você não tem permissão para alterar este agendamento.");
     }
 
-    const canEditStatus = isNew ? true : ((amICreator || canManageAll) || (amIShared && !isLocked));
+    const canEditStatus = isNew ? true : (amICreator || canManageAll);
 
     // Regra: horário aberto => edição conforme permissão normal.
     // horário encerrado => apenas status (criador/admin/master).
@@ -113,6 +113,9 @@ export async function saveAppointmentAction(formData) {
         appointmentData.endTime = oldAppt.endTime;
         appointmentData.isEvent = oldAppt.isEvent;
         appointmentData.eventComment = oldAppt.eventComment || "";
+        appointmentData.status = oldAppt.status || "agendada";
+        appointmentData.statusObservation = oldAppt.statusObservation || "";
+        appointmentData.isRented = Boolean(oldAppt.isRented);
         appointmentData.reference = oldAppt.reference || "";
         appointmentData.propertyAddress = oldAppt.propertyAddress || "";
         appointmentData.sharedWith = oldAppt.sharedWith || [];
@@ -249,6 +252,11 @@ function mergeOwnedItems(originalItems, submittedItems, currentUserEmail, fallba
     const baseOriginal = normalizeList((originalItems && originalItems.length > 0) ? originalItems : fallbackOriginalItems);
     const incoming = normalizeList(submittedItems);
     const incomingById = new Map(incoming.map(item => [item.itemId, item]));
+    const protectedIds = new Set(
+        baseOriginal
+            .filter(item => item.addedBy !== currentUserEmail)
+            .map(item => item.itemId)
+    );
 
     const merged = [];
 
@@ -259,15 +267,24 @@ function mergeOwnedItems(originalItems, submittedItems, currentUserEmail, fallba
         }
         const updatedOwn = incomingById.get(originalItem.itemId);
         if (updatedOwn) {
-            merged.push(updatedOwn);
+            merged.push({
+                ...updatedOwn,
+                addedBy: currentUserEmail,
+                addedByName: updatedOwn.addedByName || originalItem.addedByName || "",
+                addedAt: updatedOwn.addedAt || originalItem.addedAt || ""
+            });
             incomingById.delete(originalItem.itemId);
         }
     });
 
     incomingById.forEach(newItem => {
-        if (newItem.addedBy === currentUserEmail) {
-            merged.push(newItem);
-        }
+        if (protectedIds.has(newItem.itemId)) return;
+        merged.push({
+            ...newItem,
+            addedBy: currentUserEmail,
+            addedByName: newItem.addedByName || state.userProfile.name || "",
+            addedAt: newItem.addedAt || new Date().toLocaleString("pt-BR")
+        });
     });
 
     return merged;

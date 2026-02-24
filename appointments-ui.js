@@ -216,7 +216,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     
     // 1. Quem pode editar o STATUS?
     // Regra: Criador/Admin pode SEMPRE. Compartilhados só se NÃO estiver bloqueado.
-    const canEditStatus = (amICreator || canManageAll) || (amIShared && !isLocked);
+    const canEditStatus = (amICreator || canManageAll);
 
     // 2. Quem pode interagir com o GERAL (Campos principais)?
     // Regra original: Ninguém se estiver bloqueado.
