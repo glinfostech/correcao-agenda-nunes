@@ -18,7 +18,7 @@ function normalizeRole(role) {
     if (normalized === "corretor") return "broker";
     if (normalized === "consultora") return "consultant";
     if (normalized === "admin" || normalized === "administrador") return "admin";
-    if (normalized === "master" || normalized === "master") return "master";
+    if (normalized === "master") return "master";
     return normalized;
 }
 
@@ -36,11 +36,11 @@ export function initAdminPanel() {
         // Usa sua função normalizeRole para evitar erros de maiúsculas/minúsculas
         const currentRole = normalizeRole(state.userProfile.role);
         
-        if (currentRole !== "master") {
-            // Adiciona a classe hidden se não for master
+        if (currentRole !== "master" && currentRole !== "admin") {
+            // Adiciona a classe hidden se não for master/admin
             btnAdminPanel.classList.add("hidden"); 
         } else {
-            // REMOVE a classe hidden se for master
+            // REMOVE a classe hidden se for master ou admin
             btnAdminPanel.classList.remove("hidden"); 
         }
     }
@@ -205,8 +205,9 @@ function setupForm() {
     form.onsubmit = async (e) => {
         e.preventDefault();
 // --- TRAVA DE SEGURANÇA EXTRA ---
-        if (state.userProfile.role !== "master") {
-            showToast("Apenas usuários de TI (Master) podem cadastrar novos perfis.", "error");
+        const currentRole = normalizeRole(state.userProfile?.role);
+        if (currentRole !== "master" && currentRole !== "admin") {
+            showToast("Apenas usuários Admin ou Master podem cadastrar novos perfis.", "error");
             return;
         }
         const email = document.getElementById("crud-email").value.trim();
