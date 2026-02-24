@@ -46,7 +46,14 @@ function injectReportButton() {
     btn.innerHTML = `<i class="fas fa-chart-line"></i> Relatórios`;
     btn.onclick = openReportModal;
 
-    controls.prepend(btn);
+    const viewSwitcher = controls.querySelector(".view-switcher");
+
+    if (viewSwitcher) {
+        viewSwitcher.insertAdjacentElement("afterend", btn);
+        return;
+    }
+
+    controls.appendChild(btn);
 }
 
 function injectReportModal() {
