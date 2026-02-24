@@ -4,7 +4,7 @@ import { state, BROKERS } from "./config.js";
 import { addClientRow, addPropertyRow } from "./interactions.js";
 import { getClientList, getPropertyList } from "./utils.js";
 import { 
-    isTimeLocked, 
+    isAppointmentClosed, 
     getLockMessage, 
     createWhatsappButton,
     getConsultantName
@@ -171,18 +171,21 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // --- PERMISSÕES (LÓGICA AJUSTADA) ---
     const amICreator = appt ? appt.createdBy === state.userProfile.email : true; 
-    const isAdmin = state.userProfile.role === "admin";
-    const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com");
+    const role = String(state.userProfile.role || "").trim().toLowerCase();
+    const isAdmin = role === "admin";
+    const isMaster = role === "master";
+    const isSuperAdmin = isMaster || state.userProfile.email === "gl.infostech@gmail.com";
+    const isAdminOrMaster = isAdmin || isMaster;
     const amIShared = appt && appt.sharedWith && appt.sharedWith.includes(state.userProfile.email);
     
     // CoreEditor: Admin ou Criador
-    const isCoreEditor = (isAdmin || amICreator);
+    const isCoreEditor = (isAdminOrMaster || amICreator);
     // CanSaveAny: Pode salvar se for Editor, Criador ou Compartilhado
     const canSaveAny = (isCoreEditor || amIShared);
     
     // Lógica de Trava Temporal
     let isLocked = false;
-    if (appt && isTimeLocked(appt.date, appt.startTime) && !isSuperAdmin) {
+    if (appt && isAppointmentClosed(appt.date, appt.startTime)) {
         isLocked = true;
         lockWarning.style.display = "block";
         lockWarning.innerText = getLockMessage(appt.date);
@@ -190,22 +193,17 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
     // --- REGRAS ESPECÍFICAS PEDIDAS NO PROMPT ---
     
-    // 1. Quem pode editar o STATUS?
-    // Regra: Criador/Admin pode SEMPRE. Compartilhados só se NÃO estiver bloqueado.
-    const canEditStatus = (amICreator || isAdmin) || (canSaveAny && !isLocked);
+    // Status pode ser editado por qualquer perfil com acesso ao agendamento,
+    // independentemente de já ter passado do horário.
+    const canEditStatus = canSaveAny;
 
-    // 2. Quem pode interagir com o GERAL (Campos principais)?
-    // Regra original: Ninguém se estiver bloqueado.
+    // Demais campos só podem ser editados antes do horário passar.
     const canInteractGeneral = canSaveAny && !isLocked;
 
-    // 3. O botão SALVAR deve aparecer?
-    // Aparece se puder interagir no geral OU se puder editar Status (mesmo bloqueado)
-    const showSaveButton = canInteractGeneral || (isLocked && (amICreator || isAdmin));
+    // Salvar aparece se puder editar qualquer campo (incluindo Status em horário passado).
+    const showSaveButton = canInteractGeneral || canEditStatus;
     
     // 4. Pode deletar?
-    const createdAtMs = appt?.createdAt ? new Date(appt.createdAt).getTime() : 0;
-    const withinGraceWindow = Boolean(createdAtMs) && (Date.now() - createdAtMs <= 15 * 60 * 1000);
-    
     // Se estiver bloqueado (isLocked), NINGUÉM pode deletar. O botão vai sumir.
     const canDelete = isCoreEditor && !isLocked;
 
@@ -231,8 +229,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
 
         // --- MUDANÇA 1: Status segue permissão específica ---
         if(inpStatus) inpStatus.disabled = !canEditStatus;
-        if(inpStatusObs) inpStatusObs.disabled = !canEditStatus;
-        if(inpStatusRented) inpStatusRented.disabled = !canEditStatus; // NOVO: Segue a mesma regra do status
+        // Em horário passado, apenas o select de Status continua editável.
+        if(inpStatusObs) inpStatusObs.disabled = !canInteractGeneral;
+        if(inpStatusRented) inpStatusRented.disabled = !canInteractGeneral;
 
         const ownerSelect = document.getElementById("form-owner-select");
         if(ownerSelect) ownerSelect.disabled = disableCore;
@@ -262,7 +261,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     updateFormState(); // Init
 
     // --- RECORRÊNCIA (ADMIN) ---
-    if (isAdmin && !appt) {
+    if (isAdminOrMaster && !appt) {
         recurrenceSection.classList.remove("hidden");
         document.getElementById("recurrence-end-date").value = "";
         document.querySelectorAll("input[name='recurrence-day']").forEach(c => c.checked = false);
@@ -314,9 +313,9 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     // --- PREENCHIMENTO DE DADOS ESPECÍFICOS ---
     if (appt) {
         document.getElementById("modal-title").innerText = isEvent ? "Evento/Aviso" : "Detalhes da Visita";
-        renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin);
+        renderHeaderInfo(headerInfo, appt, isAdminOrMaster, isSuperAdmin);
         updateFormState();
-        renderHistoryLogs(appt, isAdmin);
+        renderHistoryLogs(appt, isAdminOrMaster);
 
         if (isEvent) {
             inpEventComment.value = appt.eventComment || "";
@@ -324,7 +323,7 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         } else {
             renderPropertiesInput(getPropertyList(appt), canInteractGeneral && !isEvent);
             // Clientes só editáveis se não bloqueado geral
-            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, isAdmin, appt);
+            renderClientsInput(getClientList(appt), canInteractGeneral, amICreator, isAdminOrMaster, appt);
         }
         inpStart.value = appt.startTime;
         inpEnd.value = appt.endTime;
@@ -492,16 +491,16 @@ function setupNewAppointmentUI(defaults, inpBroker, brokerStatic, btnChangeBroke
     updateFormState();
 }
 
-function renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin) {
+function renderHeaderInfo(headerInfo, appt, isAdminOrMaster, isSuperAdmin) {
     if(!headerInfo) return;
     const creationDate = appt.createdAt ? new Date(appt.createdAt).toLocaleString("pt-BR") : "N/A";
     let originalCreatorName = appt.createdByName;
     if (appt.history && appt.history.length > 0) originalCreatorName = appt.history[0].user; 
-    let idBadgeHtml = (isAdmin || isSuperAdmin) ? `<div class="id-badge">#${appt.id.slice(0, 5).toUpperCase()}</div>` : "";
+    let idBadgeHtml = (isAdminOrMaster || isSuperAdmin) ? `<div class="id-badge">#${appt.id.slice(0, 5).toUpperCase()}</div>` : "";
     let recurrenceIcon = appt.groupId ? `<span class="recurrence-icon"><i class="fas fa-sync-alt"></i></span>` : "";
 
     let ownerHtml = "";
-    if (isAdmin) {
+    if (isAdminOrMaster) {
         let options = "";
         const currentOwnerEmail = appt.createdBy;
         const sortedConsultants = [...state.availableConsultants].sort((a,b) => a.name.localeCompare(b.name));
@@ -517,8 +516,8 @@ function renderHeaderInfo(headerInfo, appt, isAdmin, isSuperAdmin) {
     headerInfo.innerHTML = `<div class="meta-header-container"><div class="meta-left-group">${ownerHtml}<span class="meta-info-text">Criado por <strong>${originalCreatorName}</strong> em ${creationDate} ${recurrenceIcon}</span></div>${idBadgeHtml}</div>`;
 }
 
-function renderHistoryLogs(appt, isAdmin) {
-    if (isAdmin && appt && appt.history && appt.history.length > 0) {
+function renderHistoryLogs(appt, isAdminOrMaster) {
+    if (isAdminOrMaster && appt && appt.history && appt.history.length > 0) {
         let historyContainer = document.getElementById("history-logs-container");
         if (!historyContainer) {
             historyContainer = document.createElement("div");
@@ -595,7 +594,7 @@ function setupShareSection(shareCheckboxes, shareSection, isCoreEditor, isLocked
     }
 }
 
-export function renderClientsInput(clients, formEditable, isCreator, isAdmin, apptContext = null) {
+export function renderClientsInput(clients, formEditable, isCreator, isAdminOrMaster, apptContext = null) {
     const clientsContainer = document.getElementById("clients-container");
     clientsContainer.innerHTML = "";
     if (!clients || clients.length === 0) {

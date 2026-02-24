@@ -4,48 +4,30 @@ import { checkOverlap, showDialog } from "./utils.js";
 import { 
     doc, addDoc, updateDoc, collection, writeBatch
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { isTimeLocked } from "./appointments-core.js";
+import { isAppointmentClosed, getLockMessage } from "./appointments-core.js";
 
 // --- AÇÃO: SALVAR AGENDAMENTO ---
 export async function saveAppointmentAction(formData) {
     const id = formData.id;
     const isNew = !id;
-    const isAdmin = state.userProfile.role === "admin";
-    // Super Admin: gl.infostech@gmail.com (Bypass total)
-    const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com"); 
-    
+    const role = String(state.userProfile.role || "").trim().toLowerCase();
+    const isAdmin = role === "admin";
+    const isMaster = role === "master";
+    const isAdminOrMaster = isAdmin || isMaster;
+
     let oldAppt = null;
     if (!isNew) {
         oldAppt = state.appointments.find(a => a.id === id);
         if (!oldAppt) throw new Error("Erro: Visita original não encontrada.");
     }
 
-    const amICreator = isNew ? true : (oldAppt.createdBy === state.userProfile.email);
 
-    let isLocked = false;
-    if (!isNew && !isSuperAdmin) {
-        isLocked = isTimeLocked(oldAppt.date, oldAppt.startTime);
-    }
-
-    // --- NOVA VALIDAÇÃO DE SEGURANÇA ---
-    if (isLocked && !isSuperAdmin) {
-        const proposedOwner = (isAdmin && formData.adminSelectedOwner) ? formData.adminSelectedOwner : (oldAppt.createdBy);
-        
-        const brokerChanged = (oldAppt.brokerId !== formData.brokerId);
-        const ownerChanged = (oldAppt.createdBy !== proposedOwner);
-
-        if (brokerChanged || ownerChanged) {
-            if (!amICreator) {
-                throw new Error("Ação Bloqueada: Como a visita já excedeu o tempo limite, apenas o Criador pode alterar o Corretor ou Responsável.");
-            }
-        }
-    }
-    // --------------------------------------------------
+    const isClosed = !isNew && isAppointmentClosed(oldAppt.date, oldAppt.startTime);
 
     let finalOwnerEmail = isNew ? state.userProfile.email : oldAppt.createdBy;
     let finalOwnerName = isNew ? state.userProfile.name : oldAppt.createdByName;
 
-    if (isAdmin && formData.adminSelectedOwner) {
+    if (isAdminOrMaster && formData.adminSelectedOwner) {
         finalOwnerEmail = formData.adminSelectedOwner;
         const consultantObj = state.availableConsultants ? state.availableConsultants.find(c => c.email === finalOwnerEmail) : null;
         finalOwnerName = consultantObj ? consultantObj.name : (finalOwnerEmail === oldAppt?.createdBy ? oldAppt.createdByName : finalOwnerEmail);
@@ -57,6 +39,13 @@ export async function saveAppointmentAction(formData) {
 
     // Objeto base para Salvar
     const nowIso = new Date().toISOString();
+
+    const hasChanged = (oldValue, newValue) => {
+        if (Array.isArray(oldValue) || Array.isArray(newValue) || (oldValue && typeof oldValue === "object") || (newValue && typeof newValue === "object")) {
+            return JSON.stringify(oldValue ?? null) !== JSON.stringify(newValue ?? null);
+        }
+        return String(oldValue ?? "") !== String(newValue ?? "");
+    };
 
     const appointmentData = {
         brokerId: formData.brokerId,
@@ -87,6 +76,31 @@ export async function saveAppointmentAction(formData) {
         isEdited: !isNew,
         editedAt: !isNew ? nowIso : null
     };
+
+    if (isClosed) {
+        const immutableChanges = [
+            ["Corretor", oldAppt.brokerId, appointmentData.brokerId],
+            ["Data", oldAppt.date, appointmentData.date],
+            ["Início", oldAppt.startTime, appointmentData.startTime],
+            ["Fim", oldAppt.endTime, appointmentData.endTime],
+            ["Tipo", oldAppt.isEvent, appointmentData.isEvent],
+            ["Comentário de Evento", oldAppt.eventComment || "", appointmentData.eventComment || ""],
+            ["Imóveis", oldAppt.properties || [], appointmentData.properties || []],
+            ["Ref", oldAppt.reference || "", appointmentData.reference || ""],
+            ["Endereço", oldAppt.propertyAddress || "", appointmentData.propertyAddress || ""],
+            ["Clientes", oldAppt.clients || [], appointmentData.clients || []],
+            ["Compartilhamento", oldAppt.sharedWith || [], appointmentData.sharedWith || []],
+            ["Responsável", oldAppt.createdBy || "", appointmentData.createdBy || ""],
+            ["Nome Responsável", oldAppt.createdByName || "", appointmentData.createdByName || ""],
+            ["Consultora Vinculada", oldAppt.linkedConsultantEmail || "", appointmentData.linkedConsultantEmail || ""],
+            ["Status Obs.", oldAppt.statusObservation || "", appointmentData.statusObservation || ""],
+            ["Imóvel Alugado", Boolean(oldAppt.isRented), Boolean(appointmentData.isRented)]
+        ].filter(([, oldVal, newVal]) => hasChanged(oldVal, newVal));
+
+        if (immutableChanges.length > 0) {
+            throw new Error(getLockMessage());
+        }
+    }
 
     if (isNew) {
         appointmentData.createdAt = nowIso;
@@ -127,7 +141,7 @@ export async function saveAppointmentAction(formData) {
     }
 
     // --- SALVAR NO FIRESTORE ---
-    const isRecurrent = (isNew && isAdmin && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
+    const isRecurrent = (isNew && isAdminOrMaster && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
 
     try {
         if (isRecurrent) {
@@ -174,6 +188,10 @@ export async function saveAppointmentAction(formData) {
 // --- AÇÃO: DELETAR AGENDAMENTO ---
 export async function deleteAppointmentAction(appt) {
     try {
+        if (isAppointmentClosed(appt?.date, appt?.startTime)) {
+            throw new Error(getLockMessage());
+        }
+
         await updateDoc(doc(db, "appointments", appt.id), {
             deletedAt: new Date().toISOString(),
             deletedBy: state.userProfile?.email || "unknown"

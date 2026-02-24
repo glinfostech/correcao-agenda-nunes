@@ -24,7 +24,7 @@ function getBrokerByIdOrName(brokerId, brokerName) {
     }) || null;
 }
 
-export function isTimeLocked(dateStr, timeStr) {
+export function isAppointmentClosed(dateStr, timeStr) {
     if (!dateStr || !timeStr) return false;
     const now = new Date();
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -34,7 +34,11 @@ export function isTimeLocked(dateStr, timeStr) {
 }
 
 export function getLockMessage() {
-    return "Horário passado. Contate o admin para alterar.";
+    return "Horário passado. Somente o campo Status pode ser alterado.";
+}
+
+export function isTimeLocked(dateStr, timeStr) {
+    return isAppointmentClosed(dateStr, timeStr);
 }
 
 export function getConsultantName(email) {

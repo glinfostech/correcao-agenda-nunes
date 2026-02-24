@@ -18,7 +18,7 @@ function normalizeRole(role) {
     if (normalized === "corretor") return "broker";
     if (normalized === "consultora") return "consultant";
     if (normalized === "admin" || normalized === "administrador") return "admin";
-    if (normalized === "master" || normalized === "master") return "master";
+    if (normalized === "master") return "master";
     return normalized;
 }
 
@@ -35,13 +35,20 @@ export function initAdminPanel() {
     if (btnAdminPanel) {
         // Usa sua função normalizeRole para evitar erros de maiúsculas/minúsculas
         const currentRole = normalizeRole(state.userProfile.role);
-        
-        if (currentRole !== "master") {
-            // Adiciona a classe hidden se não for master
-            btnAdminPanel.classList.add("hidden"); 
+
+        if (currentRole !== "master" && currentRole !== "admin") {
+            // Adiciona a classe hidden se não for master/admin
+            btnAdminPanel.classList.add("hidden");
         } else {
-            // REMOVE a classe hidden se for master
-            btnAdminPanel.classList.remove("hidden"); 
+            // REMOVE a classe hidden se for master ou admin
+            btnAdminPanel.classList.remove("hidden");
+        }
+
+        // Admin pode gerenciar usuários existentes, mas não pode cadastrar novos.
+        const createForm = document.getElementById("admin-user-form");
+        const createCard = createForm ? createForm.closest(".admin-card") : null;
+        if (createCard) {
+            createCard.classList.toggle("hidden", currentRole === "admin");
         }
     }
     // --------------------------------------------------------
@@ -205,8 +212,9 @@ function setupForm() {
     form.onsubmit = async (e) => {
         e.preventDefault();
 // --- TRAVA DE SEGURANÇA EXTRA ---
-        if (state.userProfile.role !== "master") {
-            showToast("Apenas usuários de TI (Master) podem cadastrar novos perfis.", "error");
+        const currentRole = normalizeRole(state.userProfile?.role);
+        if (currentRole !== "master") {
+            showToast("Apenas usuários Master podem cadastrar novos perfis.", "error");
             return;
         }
         const email = document.getElementById("crud-email").value.trim();
