@@ -1,5 +1,6 @@
 import { db, state } from "./config.js";
 import { initAdminPanel } from "./admin-crud.js"; 
+import { resetReportsState } from "./reports.js";
 import { translateRole } from "./utils.js"; // <--- ADICIONE ESTA LINHA AQUI
 import { 
     collection, query, where, getDocs, doc, getDoc 
@@ -257,6 +258,7 @@ function handleLoginSuccess(profile, initAppCallback) {
 
 function handleLogout() {
     localStorage.removeItem(SESSION_KEY);
+    resetReportsState();
     state.userProfile = null;
     state.appInitialized = false;
     
@@ -301,11 +303,10 @@ function updateUserUI(profile) {
         roleDisplay.innerText = cargoFinal;
     }
     
-    // 4. Mostra/Esconde o botão de Admin
+    // 4. Mostra/Esconde o botão de cadastro de usuários (apenas Master)
     const adminPanelBtn = document.getElementById("btn-admin-panel"); 
     if (adminPanelBtn) {
-        // Assume que a função isAdminRole já existe no seu arquivo
-        if (isAdminRole(profile.role)) {
+        if (normalizeRole(profile.role) === "master") {
             adminPanelBtn.classList.remove('hidden');
             adminPanelBtn.onclick = () => showAdminPanelView();
             window.openAdminPanel = showAdminPanelView;
