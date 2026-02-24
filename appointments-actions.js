@@ -6,13 +6,18 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { isTimeLocked } from "./appointments-core.js";
 
+function normalizeRole(role) {
+    return String(role || "").trim().toLowerCase();
+}
+
 // --- AÇÃO: SALVAR AGENDAMENTO ---
 export async function saveAppointmentAction(formData) {
     const id = formData.id;
     const isNew = !id;
-    const isAdmin = state.userProfile.role === "admin";
-    // Super Admin: gl.infostech@gmail.com (Bypass total)
-    const isSuperAdmin = (state.userProfile.role === "master" || state.userProfile.email === "gl.infostech@gmail.com"); 
+    const role = normalizeRole(state.userProfile.role);
+    const isAdmin = role === "admin";
+    const isMaster = role === "master";
+    const canManageAll = isAdmin || isMaster;
     
     let oldAppt = null;
     if (!isNew) {
@@ -21,31 +26,30 @@ export async function saveAppointmentAction(formData) {
     }
 
     const amICreator = isNew ? true : (oldAppt.createdBy === state.userProfile.email);
+    const amIShared = !isNew && Array.isArray(oldAppt.sharedWith) && oldAppt.sharedWith.includes(state.userProfile.email);
 
     let isLocked = false;
-    if (!isNew && !isSuperAdmin) {
+    if (!isNew) {
         isLocked = isTimeLocked(oldAppt.date, oldAppt.startTime);
     }
 
-    // --- NOVA VALIDAÇÃO DE SEGURANÇA ---
-    if (isLocked && !isSuperAdmin) {
-        const proposedOwner = (isAdmin && formData.adminSelectedOwner) ? formData.adminSelectedOwner : (oldAppt.createdBy);
-        
-        const brokerChanged = (oldAppt.brokerId !== formData.brokerId);
-        const ownerChanged = (oldAppt.createdBy !== proposedOwner);
-
-        if (brokerChanged || ownerChanged) {
-            if (!amICreator) {
-                throw new Error("Ação Bloqueada: Como a visita já excedeu o tempo limite, apenas o Criador pode alterar o Corretor ou Responsável.");
-            }
-        }
+    const canSaveAny = isNew ? true : (canManageAll || amICreator || amIShared);
+    if (!canSaveAny) {
+        throw new Error("Ação Bloqueada: você não tem permissão para alterar este agendamento.");
     }
-    // --------------------------------------------------
+
+    const canEditStatus = isNew ? true : ((amICreator || canManageAll) || (amIShared && !isLocked));
+
+    // Regra: horário aberto => edição conforme permissão normal.
+    // horário encerrado => apenas status (criador/admin/master).
+    if (isLocked && !canEditStatus) {
+        throw new Error("Ação Bloqueada: este agendamento está fora do horário permitido para edição.");
+    }
 
     let finalOwnerEmail = isNew ? state.userProfile.email : oldAppt.createdBy;
     let finalOwnerName = isNew ? state.userProfile.name : oldAppt.createdByName;
 
-    if (isAdmin && formData.adminSelectedOwner) {
+    if (canManageAll && formData.adminSelectedOwner) {
         finalOwnerEmail = formData.adminSelectedOwner;
         const consultantObj = state.availableConsultants ? state.availableConsultants.find(c => c.email === finalOwnerEmail) : null;
         finalOwnerName = consultantObj ? consultantObj.name : (finalOwnerEmail === oldAppt?.createdBy ? oldAppt.createdByName : finalOwnerEmail);
@@ -88,6 +92,24 @@ export async function saveAppointmentAction(formData) {
         editedAt: !isNew ? nowIso : null
     };
 
+    if (!isNew && isLocked) {
+        appointmentData.brokerId = oldAppt.brokerId;
+        appointmentData.date = oldAppt.date;
+        appointmentData.startTime = oldAppt.startTime;
+        appointmentData.endTime = oldAppt.endTime;
+        appointmentData.isEvent = oldAppt.isEvent;
+        appointmentData.eventComment = oldAppt.eventComment || "";
+        appointmentData.properties = oldAppt.properties || [];
+        appointmentData.reference = oldAppt.reference || "";
+        appointmentData.propertyAddress = oldAppt.propertyAddress || "";
+        appointmentData.clients = oldAppt.clients || [];
+        appointmentData.sharedWith = oldAppt.sharedWith || [];
+        appointmentData.linkedConsultantEmail = oldAppt.linkedConsultantEmail || oldAppt.createdBy || "";
+        appointmentData.linkedConsultantName = oldAppt.linkedConsultantName || oldAppt.createdByName || "";
+        appointmentData.createdBy = oldAppt.createdBy;
+        appointmentData.createdByName = oldAppt.createdByName;
+    }
+
     if (isNew) {
         appointmentData.createdAt = nowIso;
         appointmentData.isEdited = false;
@@ -127,7 +149,7 @@ export async function saveAppointmentAction(formData) {
     }
 
     // --- SALVAR NO FIRESTORE ---
-    const isRecurrent = (isNew && isAdmin && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
+    const isRecurrent = (isNew && canManageAll && formData.recurrence && formData.recurrence.days && formData.recurrence.days.length > 0 && formData.recurrence.endDate);
 
     try {
         if (isRecurrent) {

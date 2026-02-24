@@ -27,24 +27,20 @@ export function initAdminPanel() {
     setupForm();
     setupInputMasks();
     setupRolePlaceholder();
-    setupRoleToggle(); 
-    
-    // --- BLOQUEIO: ESCONDE O FORMULÁRIO SE NÃO FOR MASTER ---
+    setupRoleToggle();
+
+    const currentRole = normalizeRole(state.userProfile?.role);
+    const canManageUsers = currentRole === "master";
+
     const btnAdminPanel = document.getElementById("btn-admin-panel");
-    
     if (btnAdminPanel) {
-        // Usa sua função normalizeRole para evitar erros de maiúsculas/minúsculas
-        const currentRole = normalizeRole(state.userProfile.role);
-        
-        if (currentRole !== "master") {
-            // Adiciona a classe hidden se não for master
-            btnAdminPanel.classList.add("hidden"); 
-        } else {
-            // REMOVE a classe hidden se for master
-            btnAdminPanel.classList.remove("hidden"); 
-        }
+        btnAdminPanel.classList.toggle("hidden", !canManageUsers);
     }
-    // --------------------------------------------------------
+
+    const userFormCard = document.querySelector("#admin-crud-screen .admin-card");
+    if (userFormCard) {
+        userFormCard.classList.toggle("hidden", !canManageUsers);
+    }
     
     const btnLogout = document.getElementById("btn-admin-logout");
     if(btnLogout) {
