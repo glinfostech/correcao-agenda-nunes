@@ -69,21 +69,57 @@ export async function sendWhatsapp(name, phone, appt, brokerName, actionType = "
     window.open(url, "_blank");
 }
 
-export function createWhatsappButton(name, phone, appt, brokerName) {
+export function createWhatsappButton(appt, brokerName, getClients = null) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "btn btn-whatsapp";
     btn.innerHTML = `<i class="fab fa-whatsapp"></i> WhatsApp`;
-    btn.onclick = () => {
-        const cleanPhone = normalizePhone(phone);
-        if (!cleanPhone) {
-            showDialog("Aviso", "Telefone não cadastrado.");
+
+    btn.onclick = async () => {
+        const clientsSource = typeof getClients === "function" ? getClients() : getClientList(appt);
+        const clients = Array.isArray(clientsSource) ? clientsSource : [];
+
+        const clientsWithPhone = clients
+            .map((c) => ({
+                name: String(c?.name || "Cliente").trim() || "Cliente",
+                phone: String(c?.phone || "").trim()
+            }))
+            .filter((c) => normalizePhone(c.phone));
+
+        if (clientsWithPhone.length === 0) {
+            await showDialog("Aviso", "Nenhum telefone de cliente foi cadastrado neste agendamento.");
             return;
         }
 
+        const uniqueClients = [];
+        const seenPhones = new Set();
+        clientsWithPhone.forEach((c) => {
+            const phoneKey = normalizePhone(c.phone);
+            if (!seenPhones.has(phoneKey)) {
+                seenPhones.add(phoneKey);
+                uniqueClients.push(c);
+            }
+        });
+
+        let selectedClient = uniqueClients[0];
+        if (uniqueClients.length > 1) {
+            selectedClient = await showDialog(
+                "Escolher telefone do cliente",
+                "Selecione um telefone deste agendamento para abrir o WhatsApp:",
+                uniqueClients.map((c) => ({
+                    text: `${c.name} - ${c.phone}`,
+                    value: c,
+                    class: "btn-confirm"
+                }))
+            );
+
+            if (!selectedClient) return;
+        }
+
+        const cleanPhone = normalizePhone(selectedClient.phone);
         const dateParts = String(appt.date || "").split("-");
         const firstProperty = getPropertyList(appt)[0] || { reference: appt.reference || "", propertyAddress: appt.propertyAddress || "" };
-        const msg = `Olá ${name}, estou entrando em contato para confirmar sua visita no imóvel da rua ${firstProperty.propertyAddress} (Ref: ${firstProperty.reference || ""}) com o corretor ${brokerName} no dia ${dateParts[2]}/${dateParts[1]} às ${appt.startTime}.`;
+        const msg = `Olá ${selectedClient.name}, estou entrando em contato para confirmar sua visita no imóvel da rua ${firstProperty.propertyAddress} (Ref: ${firstProperty.reference || ""}) com o corretor ${brokerName} no dia ${dateParts[2]}/${dateParts[1]} às ${appt.startTime}.`;
 
         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
     };
