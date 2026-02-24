@@ -87,7 +87,12 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 
 .brand-section { display: flex; align-items: center; gap: 10px; color: var(--primary); min-width: 0; }
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.brand-title { white-space: nowrap; line-height: 1.05; font-size: clamp(1.45rem, 1.8vw, 2.1rem); font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+.brand-title {
+    white-space: nowrap;
+    line-height: 1.05;
+    font-size: clamp(1.05rem, 1.25vw, 1.45rem);
+    font-weight: 800;
+}
 .brand-subtitle { display: none; }
 
 .search-container { position: relative; width: 100%; min-width: 180px; max-width: 100%; }
@@ -757,7 +762,7 @@ body.theme-dark .form-group label {
 @media (max-width: 680px) {
     .navbar {padding: 8px; gap: 8px; grid-template-columns: 1fr; grid-template-areas: "brand" "search" "date" "controls"; align-items: stretch; }
     .brand-section { display: flex; }
-    .brand-title { font-size: 1.55rem; }
+    .brand-title { font-size: 1.2rem; }
     .date-nav { width: 100%; justify-content: space-between; }
     .controls-section { gap: 8px; justify-content: flex-start; width: 100%; }
     #view-broker-select { width: 100% !important; }
@@ -907,5 +912,4 @@ body.theme-dark .search-input::placeholder {
     opacity: 1;
     filter: none;
 }
-
 
